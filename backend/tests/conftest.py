@@ -1,0 +1,31 @@
+import os
+from pathlib import Path
+
+import pytest
+from httpx import ASGITransport, AsyncClient
+
+
+@pytest.fixture(autouse=True)
+def backend_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    from app.core.config import get_settings
+    from app.core.database import get_engine, get_session_factory
+
+    database_path = tmp_path / "test.db"
+    monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{database_path}")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-with-at-least-32-characters")
+    monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
+    monkeypatch.setenv("BOOTSTRAP_ADMIN_EMAIL", "admin@test.local")
+    monkeypatch.setenv("BOOTSTRAP_ADMIN_PASSWORD", "Admin1234!")
+    get_settings.cache_clear()
+    get_engine.cache_clear()
+    get_session_factory.cache_clear()
+    os.environ.pop("PYTHONDONTWRITEBYTECODE", None)
+
+
+@pytest.fixture
+async def client():
+    from app.main import create_app
+
+    app = create_app()
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://testserver") as test_client:
+        yield test_client
