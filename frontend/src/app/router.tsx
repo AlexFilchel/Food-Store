@@ -1,13 +1,98 @@
-import { BrowserRouter, Route, Routes } from 'react-router-dom'
+import {
+  Outlet,
+  RouterProvider,
+  createBrowserRouter,
+  createMemoryRouter,
+  createRoutesFromElements,
+  Route,
+} from 'react-router-dom'
 
+import { AnonymousOnlyGuard } from '@/app/guards/anonymous-only-guard'
+import { AuthenticatedGuard } from '@/app/guards/authenticated-guard'
+import { RoleGuard } from '@/app/guards/role-guard'
+import { ShellEventBridge } from '@/app/providers/shell-event-bridge'
+import type { AppRoleCode } from '@/app/routes/route-config'
+import { routePaths } from '@/app/routes/route-config'
+import { SessionBootstrapBoundary } from '@/features/auth/ui/session-bootstrap-boundary'
+import { AccessDeniedPage } from '@/pages/access-denied-page/ui/access-denied-page'
+import { AdminPage } from '@/pages/admin-page/ui/admin-page'
+import { AppPage } from '@/pages/app-page/ui/app-page'
 import { HomePage } from '@/pages/home-page/ui/home-page'
+import { LoginPage } from '@/pages/login-page/ui/login-page'
+import { NotFoundPage } from '@/pages/not-found-page/ui/not-found-page'
+import { OrdersPage } from '@/pages/orders-page/ui/orders-page'
+import { RegisterPage } from '@/pages/register-page/ui/register-page'
+import { StockPage } from '@/pages/stock-page/ui/stock-page'
+import { GlobalFeedbackBanner } from '@/shared/ui/global-feedback-banner'
+import { AuthenticatedShellLayout } from '@/widgets/app-shell/ui/authenticated-shell-layout'
 
 export function AppRouter() {
+  return <RouterProvider router={createAppRouter()} />
+}
+
+interface CreateAppRouterOptions {
+  initialEntries?: string[]
+}
+
+export function createAppRouter(options?: CreateAppRouterOptions) {
+  const routes = createRoutesFromElements(
+    <Route element={<RootLayout />}>
+      <Route element={<ShellEventBridge />}>
+        <Route index element={<HomePage />} />
+        <Route
+          element={
+            <AnonymousOnlyGuard>
+              <LoginPage />
+            </AnonymousOnlyGuard>
+          }
+          path={routePaths.login}
+        />
+        <Route
+          element={
+            <AnonymousOnlyGuard>
+              <RegisterPage />
+            </AnonymousOnlyGuard>
+          }
+          path={routePaths.register}
+        />
+        <Route path={routePaths.accessDenied} element={<AccessDeniedPage />} />
+
+        <Route
+          element={
+            <AuthenticatedGuard>
+              <SessionBootstrapBoundary>
+                <AuthenticatedShellLayout />
+              </SessionBootstrapBoundary>
+            </AuthenticatedGuard>
+          }
+        >
+          <Route path={routePaths.app} element={<AppPage />} />
+          <Route path={routePaths.admin} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminPage /></ProtectedByRole>} />
+          <Route path={routePaths.stock} element={<ProtectedByRole allowedRoles={['ADMIN', 'STOCK']}><StockPage /></ProtectedByRole>} />
+          <Route path={routePaths.orders} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS']}><OrdersPage /></ProtectedByRole>} />
+        </Route>
+
+        <Route path="*" element={<NotFoundPage />} />
+      </Route>
+    </Route>,
+  )
+
+  if (options?.initialEntries) {
+    return createMemoryRouter(routes, { initialEntries: options.initialEntries })
+  }
+
+  return createBrowserRouter(routes)
+}
+
+function ProtectedByRole({ allowedRoles, children }: { allowedRoles: readonly AppRoleCode[]; children: React.ReactNode }) {
+  return <RoleGuard allowedRoles={allowedRoles}>{children}</RoleGuard>
+}
+
+function RootLayout() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-      </Routes>
-    </BrowserRouter>
+    <>
+      <GlobalFeedbackBanner />
+      <Outlet />
+    </>
   )
 }
