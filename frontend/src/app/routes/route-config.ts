@@ -5,6 +5,7 @@ export const routePaths = {
   app: '/app',
   admin: '/admin',
   adminCategories: '/admin/categories',
+  adminIngredients: '/admin/ingredients',
   stock: '/stock',
   orders: '/orders',
   accessDenied: '/access-denied',
@@ -39,6 +40,12 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     to: routePaths.adminCategories,
     label: 'Categorías',
     description: 'CRUD jerárquico del catálogo administrativo.',
+    allowedRoles: ['ADMIN'],
+  },
+  {
+    to: routePaths.adminIngredients,
+    label: 'Ingredientes',
+    description: 'Administración de ingredientes y alérgenos.',
     allowedRoles: ['ADMIN'],
   },
   {

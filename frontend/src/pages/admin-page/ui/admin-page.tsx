@@ -14,6 +14,9 @@ export function AdminPage() {
         <Link className="inline-flex rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white" to={routePaths.adminCategories}>
           Ir a gestión de categorías
         </Link>
+        <Link className="ml-3 inline-flex rounded-2xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white" to={routePaths.adminIngredients}>
+          Ir a gestión de ingredientes
+        </Link>
       </div>
     </section>
   )

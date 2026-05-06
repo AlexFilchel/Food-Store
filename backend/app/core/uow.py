@@ -6,6 +6,7 @@ from app.core.database import get_session_factory
 from app.modules.auth.repository import RefreshTokenRepository
 from app.modules.categories.repository import CategoryRepository
 from app.modules.identity.repository import RoleRepository, UserRepository, UserRoleRepository
+from app.modules.ingredients.repository import AllergenRepository, IngredientAllergenRepository, IngredientRepository
 from app.modules.orders.repository import OrderStateRepository
 from app.modules.payments.repository import PaymentMethodRepository
 
@@ -22,6 +23,9 @@ class SqlAlchemyUnitOfWork:
         self.roles = RoleRepository(self.session)
         self.users = UserRepository(self.session)
         self.user_roles = UserRoleRepository(self.session)
+        self.ingredients = IngredientRepository(self.session)
+        self.allergens = AllergenRepository(self.session)
+        self.ingredient_allergens = IngredientAllergenRepository(self.session)
         self.order_states = OrderStateRepository(self.session)
         self.payment_methods = PaymentMethodRepository(self.session)
         return self
