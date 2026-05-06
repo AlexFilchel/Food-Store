@@ -92,6 +92,7 @@ function NavigationList({ navigation }: NavigationListProps) {
                   : 'border-transparent bg-slate-50 text-slate-700 hover:border-slate-200 hover:bg-white',
               )
             }
+            end={item.exact}
             to={item.to}
           >
             <span className="block text-sm font-semibold">{item.label}</span>

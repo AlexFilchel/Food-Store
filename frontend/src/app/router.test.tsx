@@ -19,6 +19,17 @@ vi.mock('@/entities/health/api/get-health', () => ({
   }),
 }))
 
+vi.mock('@/entities/categories/api/category-client', () => ({
+  categoryClient: {
+    list: () => Promise.resolve({ items: [], total: 0, page: 1, size: 50, pages: 0 }),
+    tree: () => Promise.resolve([]),
+    detail: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+  },
+}))
+
 const clientUser: AuthUser = {
   id: 1,
   first_name: 'Ada',
@@ -166,6 +177,10 @@ describe('AppRouter access control', () => {
 
     expect(await screen.findByRole('heading', { name: 'Panel de administración' })).toBeInTheDocument()
     await waitFor(() => expect(authClient.me).toHaveBeenCalledTimes(1))
+
+    const adminCategoriesRender = renderRouter(['/admin/categories'])
+    expect(await screen.findByRole('heading', { name: 'Gestión de categorías' })).toBeInTheDocument()
+    adminCategoriesRender.unmount()
   })
 
   it.each([
@@ -180,7 +195,7 @@ describe('AppRouter access control', () => {
       user: adminUser,
       path: '/admin',
       heading: 'Panel de administración',
-      visible: [/Mi espacio/i, /Administración/i, /Stock/i, /Pedidos/i],
+      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Stock/i, /Pedidos/i],
       hidden: [],
     },
     {
@@ -206,12 +221,21 @@ describe('AppRouter access control', () => {
     expect(await screen.findByRole('heading', { name: heading })).toBeInTheDocument()
 
     for (const linkName of visible) {
-      expect(screen.getByRole('link', { name: linkName })).toBeInTheDocument()
+      expect(screen.getAllByRole('link', { name: linkName }).length).toBeGreaterThan(0)
     }
 
     for (const linkName of hidden) {
       expect(screen.queryByRole('link', { name: linkName })).not.toBeInTheDocument()
     }
+  })
+
+  it('blocks non-admin users from the category management route', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
+
+    renderRouter(['/admin/categories'])
+
+    expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
   })
 
   it('renders accessible navigation controls, active route state and logout affordances', async () => {

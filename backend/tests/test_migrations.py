@@ -28,6 +28,21 @@ async def test_alembic_upgrade_and_downgrade_work_on_empty_database(tmp_path):
     async with engine.connect() as connection:
         result = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='roles'"))
         assert result.scalar_one() == 'roles'
+        categories_table = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'"))
+        assert categories_table.scalar_one() == 'categories'
+        categories_indexes = await connection.execute(
+            text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='categories'")
+        )
+        index_names = {row[0] for row in categories_indexes.fetchall()}
+        assert 'ix_categories_parent_id' in index_names
+        assert 'ix_categories_deleted_at_parent_id' in index_names
+        assert 'uq_categories_active_parent_slug' in index_names
     await engine.dispose()
 
     command.downgrade(config, 'base')
+
+    engine = create_async_engine(async_database_url)
+    async with engine.connect() as connection:
+        result = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='categories'"))
+        assert result.scalar_one_or_none() is None
+    await engine.dispose()

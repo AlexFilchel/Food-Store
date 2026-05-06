@@ -4,6 +4,7 @@ export const routePaths = {
   register: '/register',
   app: '/app',
   admin: '/admin',
+  adminCategories: '/admin/categories',
   stock: '/stock',
   orders: '/orders',
   accessDenied: '/access-denied',
@@ -14,6 +15,7 @@ export type AppRoleCode = 'ADMIN' | 'CLIENT' | 'PEDIDOS' | 'STOCK'
 export interface NavigationRoute {
   allowedRoles: readonly AppRoleCode[]
   description: string
+  exact?: boolean
   label: string
   to: string
 }
@@ -24,11 +26,19 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     label: 'Mi espacio',
     description: 'Resumen del cliente y próximos pasos.',
     allowedRoles: ['CLIENT', 'ADMIN'],
+    exact: true,
   },
   {
     to: routePaths.admin,
     label: 'Administración',
     description: 'Panel operativo para administración general.',
+    allowedRoles: ['ADMIN'],
+    exact: true,
+  },
+  {
+    to: routePaths.adminCategories,
+    label: 'Categorías',
+    description: 'CRUD jerárquico del catálogo administrativo.',
     allowedRoles: ['ADMIN'],
   },
   {
@@ -36,12 +46,14 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     label: 'Stock',
     description: 'Gestión de inventario y disponibilidad.',
     allowedRoles: ['ADMIN', 'STOCK'],
+    exact: true,
   },
   {
     to: routePaths.orders,
     label: 'Pedidos',
     description: 'Seguimiento y preparación de pedidos.',
     allowedRoles: ['ADMIN', 'PEDIDOS'],
+    exact: true,
   },
 ] as const
 
