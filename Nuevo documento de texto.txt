@@ -1,0 +1,540 @@
+(.venv) C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend>python -m app.db.seed
+Traceback (most recent call last):
+  File "C:\Users\filch\miniconda3\Lib\asyncio\windows_events.py", line 463, in finish_socket_func
+    return ov.getresult()
+           ~~~~~~~~~~~~^^
+OSError: [WinError 64] El nombre de red especificado ya no está disponible
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "C:\Users\filch\miniconda3\Lib\asyncio\proactor_events.py", line 286, in _loop_reading
+    length = fut.result()
+  File "C:\Users\filch\miniconda3\Lib\asyncio\windows_events.py", line 804, in _poll
+    value = callback(transferred, key, ov)
+  File "C:\Users\filch\miniconda3\Lib\asyncio\windows_events.py", line 467, in finish_socket_func
+    raise ConnectionResetError(*exc.args)
+ConnectionResetError: [WinError 64] El nombre de red especificado ya no está disponible
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 198, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\db\seed.py", line 97, in <module>
+    main()
+    ~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\db\seed.py", line 93, in main
+    asyncio.run(seed_database())
+    ~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\miniconda3\Lib\asyncio\runners.py", line 195, in run
+    return runner.run(main)
+           ~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\miniconda3\Lib\asyncio\runners.py", line 118, in run
+    return self._loop.run_until_complete(task)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\miniconda3\Lib\asyncio\base_events.py", line 725, in run_until_complete
+    return future.result()
+           ~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\db\seed.py", line 55, in seed_database
+    await _upsert_catalog(session, Role, ROLE_SEED)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\db\seed.py", line 38, in _upsert_catalog
+    result = await session.execute(select(model).where(model.id == row["id"]))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 449, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2239, in _execute_internal
+    conn = self._connection_for_bind(bind)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2108, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1187, in _connection_for_bind
+    conn = bind.connect()
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3293, in connect
+    return self._connection_cls(self)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3317, in raw_connection
+    return self.pool.connect()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 448, in connect
+    return _ConnectionFairy._checkout(self)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1272, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 712, in checkout
+    rec = pool._do_get()
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 177, in _do_get
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 121, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 175, in _do_get
+    return self._create_connection()
+           ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 389, in _create_connection
+    return _ConnectionRecord(self)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 674, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 900, in __connect
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 121, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 667, in connect
+    return dialect.connect(*cargs_tup, **cparams)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 630, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 955, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connection.py", line 2443, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<22 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1218, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1054, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1102, in __connect_addr
+    await connected
+asyncpg.exceptions.ConnectionDoesNotExistError: connection was closed in the middle of operation
+
+(.venv) C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend>uvicorn app.main:app --reload
+←[32mINFO←[0m:     Will watch for changes in these directories: ['C:\\Users\\filch\\OneDrive\\Escritorio\\food store\\Food-Store\\backend']
+←[32mINFO←[0m:     Uvicorn running on ←[1mhttp://127.0.0.1:8000←[0m (Press CTRL+C to quit)
+←[32mINFO←[0m:     Started reloader process [←[36m←[1m12756←[0m] using ←[36m←[1mWatchFiles←[0m
+INFO:     Started server process [15960]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+{"method": "POST", "path": "/api/v1/auth/register", "query": "", "status_code": 422, "duration_ms": 113.7, "event": "request.completed", "level": "info", "timestamp": "2026-05-05T23:07:37.566990Z"}
+INFO:     127.0.0.1:53196 - "POST /api/v1/auth/register HTTP/1.1" 422 Unprocessable Content
+{"method": "GET", "path": "/docs", "query": "", "status_code": 200, "duration_ms": 0.44, "event": "request.completed", "level": "info", "timestamp": "2026-05-05T23:08:12.453556Z"}
+INFO:     127.0.0.1:53197 - "GET /docs HTTP/1.1" 200 OK
+{"method": "GET", "path": "/openapi.json", "query": "", "status_code": 200, "duration_ms": 46.41, "event": "request.completed", "level": "info", "timestamp": "2026-05-05T23:08:12.788066Z"}
+INFO:     127.0.0.1:53197 - "GET /openapi.json HTTP/1.1" 200 OK
+{"method": "POST", "path": "/api/v1/auth/login", "query": "", "status_code": 422, "duration_ms": 2.78, "event": "request.completed", "level": "info", "timestamp": "2026-05-05T23:08:25.332324Z"}
+INFO:     127.0.0.1:53201 - "POST /api/v1/auth/login HTTP/1.1" 422 Unprocessable Content
+{"method": "POST", "path": "/api/v1/auth/register", "query": "", "status_code": 422, "duration_ms": 1.28, "event": "request.completed", "level": "info", "timestamp": "2026-05-05T23:08:37.568379Z"}
+INFO:     127.0.0.1:53202 - "POST /api/v1/auth/register HTTP/1.1" 422 Unprocessable Content
+{"path": "/api/v1/auth/register", "exc_info": true, "event": "request.unhandled_error", "level": "error", "timestamp": "2026-05-05T23:08:59.853369Z"}
+INFO:     127.0.0.1:53206 - "POST /api/v1/auth/register HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\filch\miniconda3\Lib\asyncio\selector_events.py", line 1009, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [WinError 10054] Se ha forzado la interrupción de una conexión existente por el host remoto
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 421, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 56, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\miniconda3\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\core\logging.py", line 29, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\modules\auth\router.py", line 39, in register
+    return await auth_service.register(uow, payload, _request_context(request))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\modules\auth\service.py", line 58, in register
+    existing_user = await uow.users.get_by_email(payload.email)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\modules\identity\repository.py", line 22, in get_by_email
+    result = await self.session.execute(select(User).where(User.email == email, User.deleted_at.is_(None)))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 449, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2239, in _execute_internal
+    conn = self._connection_for_bind(bind)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2108, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1187, in _connection_for_bind
+    conn = bind.connect()
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3293, in connect
+    return self._connection_cls(self)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3317, in raw_connection
+    return self.pool.connect()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 448, in connect
+    return _ConnectionFairy._checkout(self)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1272, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 712, in checkout
+    rec = pool._do_get()
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 177, in _do_get
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 121, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 175, in _do_get
+    return self._create_connection()
+           ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 389, in _create_connection
+    return _ConnectionRecord(self)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 674, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 900, in __connect
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 121, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 667, in connect
+    return dialect.connect(*cargs_tup, **cparams)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 630, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 955, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connection.py", line 2443, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<22 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1218, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1054, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1102, in __connect_addr
+    await connected
+asyncpg.exceptions.ConnectionDoesNotExistError: connection was closed in the middle of operation
+{"method": "POST", "path": "/api/v1/auth/register", "query": "", "status_code": 422, "duration_ms": 1.45, "event": "request.completed", "level": "info", "timestamp": "2026-05-05T23:09:14.190658Z"}
+INFO:     127.0.0.1:53208 - "POST /api/v1/auth/register HTTP/1.1" 422 Unprocessable Content
+{"path": "/api/v1/auth/register", "exc_info": true, "event": "request.unhandled_error", "level": "error", "timestamp": "2026-05-05T23:09:39.729691Z"}
+INFO:     127.0.0.1:53212 - "POST /api/v1/auth/register HTTP/1.1" 500 Internal Server Error
+ERROR:    Exception in ASGI application
+Traceback (most recent call last):
+  File "C:\Users\filch\miniconda3\Lib\asyncio\selector_events.py", line 1009, in _read_ready__data_received
+    data = self._sock.recv(self.max_size)
+ConnectionResetError: [WinError 10054] Se ha forzado la interrupción de una conexión existente por el host remoto
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\uvicorn\protocols\http\httptools_impl.py", line 421, in run_asgi
+    result = await app(  # type: ignore[func-returns-value]
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+        self.scope, self.receive, self.send
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\uvicorn\middleware\proxy_headers.py", line 56, in __call__
+    return await self.app(scope, receive, send)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\applications.py", line 1159, in __call__
+    await super().__call__(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\applications.py", line 90, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\errors.py", line 186, in __call__
+    raise exc
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\errors.py", line 164, in __call__
+    await self.app(scope, receive, _send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\base.py", line 191, in __call__
+    with recv_stream, send_stream, collapse_excgroups():
+                                   ~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\miniconda3\Lib\contextlib.py", line 162, in __exit__
+    self.gen.throw(value)
+    ~~~~~~~~~~~~~~^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_utils.py", line 87, in collapse_excgroups
+    raise exc
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\base.py", line 193, in __call__
+    response = await self.dispatch_func(request, call_next)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\core\logging.py", line 29, in log_requests
+    response = await call_next(request)
+               ^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\base.py", line 168, in call_next
+    raise app_exc from app_exc.__cause__ or app_exc.__context__
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\base.py", line 144, in coro
+    await self.app(scope, receive_or_disconnect, send_no_error)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\cors.py", line 96, in __call__
+    await self.simple_response(scope, receive, send, request_headers=headers)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\cors.py", line 154, in simple_response
+    await self.app(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\middleware\exceptions.py", line 63, in __call__
+    await wrap_app_handling_exceptions(self.app, conn)(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\middleware\asyncexitstack.py", line 18, in __call__
+    await self.app(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\routing.py", line 660, in __call__
+    await self.middleware_stack(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\routing.py", line 680, in app
+    await route.handle(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\routing.py", line 276, in handle
+    await self.app(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\routing.py", line 134, in app
+    await wrap_app_handling_exceptions(app, request)(scope, receive, send)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 53, in wrapped_app
+    raise exc
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\starlette\_exception_handler.py", line 42, in wrapped_app
+    await app(scope, receive, sender)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\routing.py", line 120, in app
+    response = await f(request)
+               ^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\routing.py", line 674, in app
+    raw_response = await run_endpoint_function(
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<3 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\fastapi\routing.py", line 328, in run_endpoint_function
+    return await dependant.call(**values)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\modules\auth\router.py", line 39, in register
+    return await auth_service.register(uow, payload, _request_context(request))
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\modules\auth\service.py", line 58, in register
+    existing_user = await uow.users.get_by_email(payload.email)
+                    ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\app\modules\identity\repository.py", line 22, in get_by_email
+    result = await self.session.execute(select(User).where(User.email == email, User.deleted_at.is_(None)))
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\ext\asyncio\session.py", line 449, in execute
+    result = await greenlet_spawn(
+             ^^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 201, in greenlet_spawn
+    result = context.throw(*sys.exc_info())
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2351, in execute
+    return self._execute_internal(
+           ~~~~~~~~~~~~~~~~~~~~~~^
+        statement,
+        ^^^^^^^^^^
+    ...<4 lines>...
+        _add_event=_add_event,
+        ^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2239, in _execute_internal
+    conn = self._connection_for_bind(bind)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 2108, in _connection_for_bind
+    return trans._connection_for_bind(engine, execution_options)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "<string>", line 2, in _connection_for_bind
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\state_changes.py", line 137, in _go
+    ret_value = fn(self, *arg, **kw)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\orm\session.py", line 1187, in _connection_for_bind
+    conn = bind.connect()
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3293, in connect
+    return self._connection_cls(self)
+           ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 143, in __init__
+    self._dbapi_connection = engine.raw_connection()
+                             ~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\base.py", line 3317, in raw_connection
+    return self.pool.connect()
+           ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 448, in connect
+    return _ConnectionFairy._checkout(self)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 1272, in _checkout
+    fairy = _ConnectionRecord.checkout(pool)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 712, in checkout
+    rec = pool._do_get()
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 177, in _do_get
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 121, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\impl.py", line 175, in _do_get
+    return self._create_connection()
+           ~~~~~~~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 389, in _create_connection
+    return _ConnectionRecord(self)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 674, in __init__
+    self.__connect()
+    ~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 900, in __connect
+    with util.safe_reraise():
+         ~~~~~~~~~~~~~~~~~^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\langhelpers.py", line 121, in __exit__
+    raise exc_value.with_traceback(exc_tb)
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\pool\base.py", line 896, in __connect
+    self.dbapi_connection = connection = pool._invoke_creator(self)
+                                         ~~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\create.py", line 667, in connect
+    return dialect.connect(*cargs_tup, **cparams)
+           ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\engine\default.py", line 630, in connect
+    return self.loaded_dbapi.connect(*cargs, **cparams)  # type: ignore[no-any-return]  # NOQA: E501
+           ~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\dialects\postgresql\asyncpg.py", line 955, in connect
+    await_only(creator_fn(*arg, **kw)),
+    ~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 132, in await_only
+    return current.parent.switch(awaitable)  # type: ignore[no-any-return,attr-defined] # noqa: E501
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\sqlalchemy\util\_concurrency_py3k.py", line 196, in greenlet_spawn
+    value = await result
+            ^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connection.py", line 2443, in connect
+    return await connect_utils._connect(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    ...<22 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1218, in _connect
+    conn = await _connect_addr(
+           ^^^^^^^^^^^^^^^^^^^^
+    ...<6 lines>...
+    )
+    ^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1054, in _connect_addr
+    return await __connect_addr(params, True, *args)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\filch\OneDrive\Escritorio\food store\Food-Store\backend\.venv\Lib\site-packages\asyncpg\connect_utils.py", line 1102, in __connect_addr
+    await connected

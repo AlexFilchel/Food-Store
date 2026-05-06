@@ -1,11 +1,13 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 
-interface AuthUser {
+export interface AuthUser {
   id: number
-  full_name: string
+  first_name: string
+  last_name: string
   email: string
   roles: string[]
+  created_at: string
 }
 
 interface AuthStore {

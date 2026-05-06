@@ -17,6 +17,8 @@ class User(AuditMixin, SoftDeleteMixin, table=True):
     __tablename__ = "users"
 
     id: int | None = Field(default=None, primary_key=True)
+    first_name: str = Field(sa_column=Column(String(80), nullable=False))
+    last_name: str = Field(sa_column=Column(String(80), nullable=False))
     full_name: str = Field(sa_column=Column(String(120), nullable=False))
     email: str = Field(sa_column=Column(String(255), unique=True, nullable=False, index=True))
     hashed_password: str = Field(sa_column=Column(String(255), nullable=False))

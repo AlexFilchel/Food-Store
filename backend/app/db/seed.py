@@ -3,7 +3,7 @@ import asyncio
 from sqlalchemy import select
 
 from app.core.config import get_settings
-from app.core.database import get_session_factory, import_models
+from app.core.database import get_engine, get_session_factory, import_models
 from app.core.security import hash_password
 from app.core.time import utc_now
 from app.modules.identity.model import Role, User, UserRole
@@ -51,38 +51,47 @@ async def seed_database() -> None:
     import_models()
     settings = get_settings()
     session_factory = get_session_factory()
-    async with session_factory() as session:
-        await _upsert_catalog(session, Role, ROLE_SEED)
-        await _upsert_catalog(session, OrderState, ORDER_STATE_SEED)
-        await _upsert_catalog(session, PaymentMethod, PAYMENT_METHOD_SEED)
+    try:
+        async with session_factory() as session:
+            await _upsert_catalog(session, Role, ROLE_SEED)
+            await _upsert_catalog(session, OrderState, ORDER_STATE_SEED)
+            await _upsert_catalog(session, PaymentMethod, PAYMENT_METHOD_SEED)
 
-        result = await session.execute(select(User).where(User.email == settings.bootstrap_admin_email))
-        admin_user = result.scalar_one_or_none()
-        if admin_user is None:
-            admin_user = User(
-                full_name=settings.bootstrap_admin_full_name,
-                email=settings.bootstrap_admin_email,
-                hashed_password=hash_password(settings.bootstrap_admin_password),
-                is_active=True,
+            result = await session.execute(select(User).where(User.email == settings.bootstrap_admin_email))
+            admin_user = result.scalar_one_or_none()
+            if admin_user is None:
+                admin_user = User(
+                    first_name=settings.bootstrap_admin_first_name,
+                    last_name=settings.bootstrap_admin_last_name,
+                    full_name=settings.bootstrap_admin_full_name,
+                    email=settings.bootstrap_admin_email,
+                    hashed_password=hash_password(settings.bootstrap_admin_password),
+                    is_active=True,
+                )
+                session.add(admin_user)
+                await session.flush()
+            else:
+                admin_user.first_name = settings.bootstrap_admin_first_name
+                admin_user.last_name = settings.bootstrap_admin_last_name
+                admin_user.full_name = settings.bootstrap_admin_full_name
+                admin_user.hashed_password = hash_password(settings.bootstrap_admin_password)
+                admin_user.is_active = True
+                admin_user.updated_at = utc_now()
+                await session.flush()
+
+            admin_role = await session.execute(select(Role).where(Role.code == "ADMIN"))
+            role = admin_role.scalar_one()
+            assignment = await session.execute(
+                select(UserRole).where(UserRole.user_id == admin_user.id, UserRole.role_id == role.id)
             )
-            session.add(admin_user)
-            await session.flush()
-        else:
-            admin_user.full_name = settings.bootstrap_admin_full_name
-            admin_user.hashed_password = hash_password(settings.bootstrap_admin_password)
-            admin_user.is_active = True
-            admin_user.updated_at = utc_now()
-            await session.flush()
+            if assignment.scalar_one_or_none() is None:
+                session.add(UserRole(user_id=admin_user.id, role_id=role.id))
 
-        admin_role = await session.execute(select(Role).where(Role.code == "ADMIN"))
-        role = admin_role.scalar_one()
-        assignment = await session.execute(
-            select(UserRole).where(UserRole.user_id == admin_user.id, UserRole.role_id == role.id)
-        )
-        if assignment.scalar_one_or_none() is None:
-            session.add(UserRole(user_id=admin_user.id, role_id=role.id))
+            await session.commit()
+    finally:
+        await get_engine().dispose()
 
-        await session.commit()
+    print("Seed completed successfully")
 
 
 def main() -> None:

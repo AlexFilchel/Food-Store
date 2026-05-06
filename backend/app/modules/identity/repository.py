@@ -22,6 +22,12 @@ class UserRepository(BaseRepository[User]):
         result = await self.session.execute(select(User).where(User.email == email, User.deleted_at.is_(None)))
         return result.scalar_one_or_none()
 
+    async def get_active_by_id(self, user_id: int) -> User | None:
+        result = await self.session.execute(
+            select(User).where(User.id == user_id, User.deleted_at.is_(None), User.is_active.is_(True))
+        )
+        return result.scalar_one_or_none()
+
 
 class UserRoleRepository(BaseRepository[UserRole]):
     def __init__(self, session: AsyncSession) -> None:
@@ -31,3 +37,13 @@ class UserRoleRepository(BaseRepository[UserRole]):
         statement = select(UserRole).where(UserRole.user_id == user_id, UserRole.role_id == role_id)
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
+
+    async def list_role_codes(self, *, user_id: int) -> list[str]:
+        statement = (
+            select(Role.code)
+            .join(UserRole, UserRole.role_id == Role.id)
+            .where(UserRole.user_id == user_id)
+            .order_by(Role.id.asc())
+        )
+        result = await self.session.execute(statement)
+        return list(result.scalars().all())

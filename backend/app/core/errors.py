@@ -1,4 +1,4 @@
-from dataclasses import dataclass, field
+from dataclasses import asdict, dataclass, field
 from http import HTTPStatus
 
 import structlog
@@ -67,7 +67,7 @@ def register_exception_handlers(app: FastAPI, settings: Settings) -> None:
                 detail=exc.detail,
                 code=exc.code,
                 type_path=exc.type_path,
-                errors=[detail.__dict__ for detail in exc.errors],
+                errors=[asdict(detail) for detail in exc.errors],
             ),
         )
 

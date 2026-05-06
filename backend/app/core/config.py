@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     secret_key: str = Field(..., alias="SECRET_KEY", min_length=32)
     access_token_expire_minutes: int = Field(30, alias="ACCESS_TOKEN_EXPIRE_MINUTES")
     refresh_token_expire_days: int = Field(7, alias="REFRESH_TOKEN_EXPIRE_DAYS")
+    password_min_length: int = Field(8, alias="PASSWORD_MIN_LENGTH")
+    auth_rate_limit_max_attempts: int = Field(5, alias="AUTH_RATE_LIMIT_MAX_ATTEMPTS")
+    auth_rate_limit_window_minutes: int = Field(15, alias="AUTH_RATE_LIMIT_WINDOW_MINUTES")
     cors_origins: str = Field("http://localhost:5173", alias="CORS_ORIGINS")
     mp_access_token: str = Field("TEST-placeholder-access-token", alias="MP_ACCESS_TOKEN")
     mp_public_key: str = Field("TEST-placeholder-public-key", alias="MP_PUBLIC_KEY")
@@ -24,6 +27,8 @@ class Settings(BaseSettings):
     bootstrap_admin_email: str = Field("admin@foodstore.local", alias="BOOTSTRAP_ADMIN_EMAIL")
     bootstrap_admin_password: str = Field("Admin1234!", alias="BOOTSTRAP_ADMIN_PASSWORD")
     bootstrap_admin_full_name: str = Field("Food Store Admin", alias="BOOTSTRAP_ADMIN_FULL_NAME")
+    bootstrap_admin_first_name: str = Field("Food", alias="BOOTSTRAP_ADMIN_FIRST_NAME")
+    bootstrap_admin_last_name: str = Field("Store Admin", alias="BOOTSTRAP_ADMIN_LAST_NAME")
 
     @property
     def cors_origins_list(self) -> list[str]:

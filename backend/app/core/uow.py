@@ -3,6 +3,7 @@ from collections.abc import Callable
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.database import get_session_factory
+from app.modules.auth.repository import RefreshTokenRepository
 from app.modules.identity.repository import RoleRepository, UserRepository, UserRoleRepository
 from app.modules.orders.repository import OrderStateRepository
 from app.modules.payments.repository import PaymentMethodRepository
@@ -15,6 +16,7 @@ class SqlAlchemyUnitOfWork:
 
     async def __aenter__(self) -> "SqlAlchemyUnitOfWork":
         self.session = self._session_factory()
+        self.refresh_tokens = RefreshTokenRepository(self.session)
         self.roles = RoleRepository(self.session)
         self.users = UserRepository(self.session)
         self.user_roles = UserRoleRepository(self.session)

@@ -28,6 +28,14 @@ python -m app.db.seed
 uvicorn app.main:app --reload
 ```
 
+Variables nuevas de auth/RBAC relevantes en `backend/.env.example`:
+
+- `PASSWORD_MIN_LENGTH`
+- `AUTH_RATE_LIMIT_MAX_ATTEMPTS`
+- `AUTH_RATE_LIMIT_WINDOW_MINUTES`
+- `BOOTSTRAP_ADMIN_FIRST_NAME`
+- `BOOTSTRAP_ADMIN_LAST_NAME`
+
 Backend URLs:
 
 - API: `http://localhost:8000`
