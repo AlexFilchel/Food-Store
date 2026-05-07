@@ -6,6 +6,7 @@ export const routePaths = {
   admin: '/admin',
   adminCategories: '/admin/categories',
   adminIngredients: '/admin/ingredients',
+  adminProducts: '/admin/products',
   stock: '/stock',
   orders: '/orders',
   accessDenied: '/access-denied',
@@ -46,6 +47,12 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     to: routePaths.adminIngredients,
     label: 'Ingredientes',
     description: 'Administración de ingredientes y alérgenos.',
+    allowedRoles: ['ADMIN'],
+  },
+  {
+    to: routePaths.adminProducts,
+    label: 'Productos',
+    description: 'Administración de productos y composición.',
     allowedRoles: ['ADMIN'],
   },
   {

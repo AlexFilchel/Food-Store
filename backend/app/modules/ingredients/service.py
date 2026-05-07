@@ -10,6 +10,7 @@ from app.modules.ingredients.errors import (
     allergen_in_use,
     allergen_not_found,
     ingredient_duplicate,
+    ingredient_has_products,
     ingredient_invalid_allergen,
     ingredient_not_found,
 )
@@ -106,6 +107,8 @@ class IngredientService:
             ingredient = await uow.ingredients.get_by_id(ingredient_id)
             if ingredient is None:
                 raise ingredient_not_found()
+            if await uow.products.has_active_product_for_ingredient(ingredient.id):
+                raise ingredient_has_products()
             await uow.ingredients.soft_delete(ingredient)
 
     async def list_allergens(

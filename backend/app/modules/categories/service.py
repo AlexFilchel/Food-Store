@@ -9,6 +9,7 @@ from app.modules.categories.errors import (
     category_cycle_detected,
     category_duplicate,
     category_has_children,
+    category_has_products,
     category_invalid_parent,
     category_not_found,
 )
@@ -111,6 +112,8 @@ class CategoryService:
             category = await self._get_category_or_fail(uow, category_id)
             if await uow.categories.has_active_children(category.id):
                 raise category_has_children()
+            if await uow.products.has_active_product_for_category(category.id):
+                raise category_has_products()
             await uow.categories.soft_delete(category)
 
     async def _get_category_or_fail(self, uow: SqlAlchemyUnitOfWork, category_id: int) -> Category:

@@ -36,6 +36,12 @@ async def test_alembic_upgrade_and_downgrade_work_on_empty_database(tmp_path):
         assert allergens_table.scalar_one() == 'allergens'
         assoc_table = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='ingredient_allergens'"))
         assert assoc_table.scalar_one() == 'ingredient_allergens'
+        products_table = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='products'"))
+        assert products_table.scalar_one() == 'products'
+        product_categories = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='product_categories'"))
+        assert product_categories.scalar_one() == 'product_categories'
+        product_ingredients = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='product_ingredients'"))
+        assert product_ingredients.scalar_one() == 'product_ingredients'
         categories_indexes = await connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='categories'")
         )
@@ -49,6 +55,9 @@ async def test_alembic_upgrade_and_downgrade_work_on_empty_database(tmp_path):
         allergen_indexes = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='allergens'"))
         allergen_index_names = {row[0] for row in allergen_indexes.fetchall()}
         assert 'uq_allergens_active_slug' in allergen_index_names
+        product_indexes = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='products'"))
+        product_index_names = {row[0] for row in product_indexes.fetchall()}
+        assert 'uq_products_active_slug' in product_index_names
     await engine.dispose()
 
     command.downgrade(config, 'base')
@@ -61,6 +70,13 @@ async def test_alembic_upgrade_and_downgrade_work_on_empty_database(tmp_path):
 
 def test_ingredient_migration_uses_postgresql_safe_predicates():
     migration = Path(__file__).resolve().parents[1] / "alembic" / "versions" / "20260506_0004_ingredient_management.py"
+    content = migration.read_text(encoding="utf-8")
+    assert "deleted_at IS NULL AND is_active IS TRUE" in content
+    assert "deleted_at IS NULL AND is_active = 1" in content
+
+
+def test_product_migration_uses_postgresql_safe_predicates():
+    migration = Path(__file__).resolve().parents[1] / "alembic" / "versions" / "20260507_0005_product_catalog_management.py"
     content = migration.read_text(encoding="utf-8")
     assert "deleted_at IS NULL AND is_active IS TRUE" in content
     assert "deleted_at IS NULL AND is_active = 1" in content

@@ -9,6 +9,7 @@ from app.modules.identity.repository import RoleRepository, UserRepository, User
 from app.modules.ingredients.repository import AllergenRepository, IngredientAllergenRepository, IngredientRepository
 from app.modules.orders.repository import OrderStateRepository
 from app.modules.payments.repository import PaymentMethodRepository
+from app.modules.products.repository import ProductRepository
 
 
 class SqlAlchemyUnitOfWork:
@@ -28,6 +29,7 @@ class SqlAlchemyUnitOfWork:
         self.ingredient_allergens = IngredientAllergenRepository(self.session)
         self.order_states = OrderStateRepository(self.session)
         self.payment_methods = PaymentMethodRepository(self.session)
+        self.products = ProductRepository(self.session)
         return self
 
     async def __aexit__(self, exc_type, exc, tb) -> None:

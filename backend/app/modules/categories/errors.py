@@ -51,3 +51,13 @@ def category_has_children() -> AppError:
         detail="The category still has active child categories and cannot be deleted.",
         type_path="category-has-children",
     )
+
+
+def category_has_products() -> AppError:
+    return AppError(
+        status_code=HTTPStatus.CONFLICT,
+        code="CATEGORY_HAS_PRODUCTS",
+        title="Category Has Products",
+        detail="The category is referenced by active products and cannot be deleted.",
+        type_path="category-has-products",
+    )

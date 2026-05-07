@@ -14,6 +14,7 @@ def import_models() -> None:
     from app.modules.ingredients import model as _ingredient_models  # noqa: F401
     from app.modules.orders import model as _order_models  # noqa: F401
     from app.modules.payments import model as _payment_models  # noqa: F401
+    from app.modules.products import model as _product_models  # noqa: F401
 
 
 @lru_cache

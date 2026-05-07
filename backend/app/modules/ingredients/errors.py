@@ -37,3 +37,13 @@ def allergen_in_use() -> AppError:
         "The allergen is referenced by active ingredients and cannot be deleted.",
         "allergen-in-use",
     )
+
+
+def ingredient_has_products() -> AppError:
+    return AppError(
+        HTTPStatus.CONFLICT,
+        "INGREDIENT_HAS_PRODUCTS",
+        "Ingredient Has Products",
+        "The ingredient is referenced by active products and cannot be deleted.",
+        "ingredient-has-products",
+    )

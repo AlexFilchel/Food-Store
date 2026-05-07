@@ -45,6 +45,16 @@ vi.mock('@/entities/ingredients/api/ingredient-client', () => ({
   },
 }))
 
+vi.mock('@/entities/products/api/product-client', () => ({
+  productClient: {
+    list: () => Promise.resolve({ items: [], total: 0, page: 1, size: 50, pages: 0 }),
+    detail: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+  },
+}))
+
 const clientUser: AuthUser = {
   id: 1,
   first_name: 'Ada',
@@ -210,7 +220,7 @@ describe('AppRouter access control', () => {
       user: adminUser,
       path: '/admin',
       heading: 'Panel de administración',
-      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Stock/i, /Pedidos/i],
+      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Stock/i, /Pedidos/i],
       hidden: [],
     },
     {
@@ -258,6 +268,15 @@ describe('AppRouter access control', () => {
     useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
 
     renderRouter(['/admin/ingredients'])
+
+    expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
+  })
+
+  it('blocks non-admin users from the product management route', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
+
+    renderRouter(['/admin/products'])
 
     expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
   })
