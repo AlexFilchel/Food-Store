@@ -38,7 +38,7 @@ describe('ProductManagementPage', () => {
     await user.click(screen.getByRole('button', { name: 'Crear producto' }))
 
     await waitFor(() => expect(productClient.create).toHaveBeenCalled())
-    expect(screen.getByLabelText('Disponibilidad')).toBeInTheDocument()
-    expect(screen.getByLabelText('Stock')).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Disponibilidad' })).toBeInTheDocument()
+    expect(screen.getByRole('combobox', { name: 'Stock' })).toBeInTheDocument()
   })
 })
