@@ -1,4 +1,5 @@
 import asyncio
+import sys
 
 from sqlalchemy import select
 
@@ -95,6 +96,8 @@ async def seed_database() -> None:
 
 
 def main() -> None:
+    if sys.platform == "win32":
+        asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
     asyncio.run(seed_database())
 
 

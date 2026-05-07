@@ -15,6 +15,7 @@ dependencies = [
   "fastapi>=0.115.0",
   "httpx>=0.28.0",
   "pydantic-settings>=2.6.0",
+  "psycopg[binary]>=3.3.4",
   "python-jose[cryptography]>=3.3.0",
   "sqlalchemy>=2.0.36",
   "sqlmodel>=0.0.22",

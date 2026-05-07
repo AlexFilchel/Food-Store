@@ -18,7 +18,7 @@ target_metadata = get_metadata()
 
 def _configured_database_url() -> str:
     configured_url = config.get_main_option("sqlalchemy.url")
-    if configured_url:
+    if configured_url and configured_url != "sqlite:///./dev.db":
         return configured_url
     return get_settings().database_url
 
