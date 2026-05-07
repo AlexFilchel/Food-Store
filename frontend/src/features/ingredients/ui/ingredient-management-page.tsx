@@ -68,6 +68,12 @@ export function IngredientManagementPage() {
     setAllergenActive(item.is_active)
   }
 
+  function toggleAllergen(allergenId: number) {
+    setSelectedAllergens((prev) =>
+      prev.includes(allergenId) ? prev.filter((id) => id !== allergenId) : [...prev, allergenId]
+    )
+  }
+
   async function submitIngredient(e: FormEvent) {
     e.preventDefault()
     setError(null)
@@ -158,7 +164,7 @@ export function IngredientManagementPage() {
       ) : null}
 
       <div className="grid gap-8 lg:grid-cols-2">
-        {/* Ingredientes Section */}
+        {/* Ingredients Section */}
         <div className="space-y-6">
           <article className="rounded-3xl border border-slate-200 p-5">
             <h3 className="text-xl font-semibold text-slate-950">Ingredientes</h3>
@@ -199,22 +205,26 @@ export function IngredientManagementPage() {
                 Ingrediente activo
               </label>
 
+              {/* Allergen checkboxes */}
               <div className="space-y-2">
-                <label className="block text-sm font-medium text-slate-700" htmlFor="ingredient-allergens">
-                  Alérgenos asociados
-                </label>
-                <select
-                  className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
-                  id="ingredient-allergens"
-                  multiple
-                  value={selectedAllergens.map(String)}
-                  onChange={(e) => setSelectedAllergens(Array.from(e.currentTarget.selectedOptions, (o) => Number(o.value)))}
-                >
-                  {(allergensQuery.data?.items ?? []).map((item) => (
-                    <option key={item.id} value={item.id}>{item.name}</option>
-                  ))}
-                </select>
-                <p className="text-xs text-slate-500">Mantené Ctrl/Cmd para seleccionar múltiples.</p>
+                <span className="block text-sm font-medium text-slate-700">Alérgenos asociados</span>
+                <div className="flex flex-wrap gap-3 rounded-2xl border border-slate-200 p-4">
+                  {(allergensQuery.data?.items ?? []).length === 0 ? (
+                    <p className="text-sm text-slate-500">No hay alérgenos creados. Creá alérgenos en el panel de la derecha.</p>
+                  ) : (
+                    (allergensQuery.data?.items ?? []).map((allergen) => (
+                      <label key={allergen.id} className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700 hover:bg-slate-50">
+                        <input
+                          type="checkbox"
+                          checked={selectedAllergens.includes(allergen.id)}
+                          onChange={() => toggleAllergen(allergen.id)}
+                          className="size-4 rounded border-slate-300"
+                        />
+                        {allergen.name}
+                      </label>
+                    ))
+                  )}
+                </div>
               </div>
 
               <button

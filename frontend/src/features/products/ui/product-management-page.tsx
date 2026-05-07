@@ -19,9 +19,11 @@ export function ProductManagementPage() {
   const [ingredientIds, setIngredientIds] = useState<number[]>([])
   const [availability, setAvailability] = useState<string>('')
   const [stockState, setStockState] = useState<string>('')
+  const [includeInactive, setIncludeInactive] = useState(false)
+  const [filterCategoryId, setFilterCategoryId] = useState<number | undefined>(undefined)
   const [form, setForm] = useState({ name: '', description: '', price: '0.00', stock_quantity: 0, is_active: true, is_available: true })
 
-  const products = useProductsListQuery({ page: 1, size: 50, search, category_id: categoryIds[0], ingredient_id: ingredientIds[0], availability: availability === '' ? undefined : availability === 'true', stock_state: stockState === '' ? undefined : stockState as 'in_stock' | 'out_of_stock' })
+  const products = useProductsListQuery({ page: 1, size: 50, search, category_id: filterCategoryId, ingredient_id: ingredientIds[0], availability: availability === '' ? undefined : availability === 'true', stock_state: stockState === '' ? undefined : stockState as 'in_stock' | 'out_of_stock', include_inactive: includeInactive })
   const categories = useCategoriesListQuery({ page: 1, size: 100, include_inactive: false })
   const ingredients = useIngredientsListQuery({ page: 1, size: 100, include_inactive: false, search: '' })
   const createMutation = useCreateProductMutation()
@@ -45,6 +47,7 @@ export function ProductManagementPage() {
       setIngredientIds([])
     } catch (cause) {
       setError(getErrorMessage(cause, 'No pudimos guardar el producto.'))
+      // DO NOT reset form on error — preserve user input
     }
   }
 
@@ -61,7 +64,7 @@ export function ProductManagementPage() {
       </div>
 
       {/* Filters */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
         <div className="space-y-2">
           <label className="block text-sm font-medium text-slate-700">Buscar</label>
           <input
@@ -70,6 +73,19 @@ export function ProductManagementPage() {
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+        </div>
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-slate-700">Categoría</label>
+          <select
+            className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+            value={filterCategoryId ?? ''}
+            onChange={(e) => setFilterCategoryId(e.target.value ? Number(e.target.value) : undefined)}
+          >
+            <option value="">Todas</option>
+            {(categories.data?.items ?? []).map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
         </div>
         <div className="space-y-2">
           <label className="block text-sm font-medium text-slate-700">Disponibilidad</label>
@@ -95,6 +111,17 @@ export function ProductManagementPage() {
             <option value="out_of_stock">Sin stock</option>
           </select>
         </div>
+        <div className="flex items-end">
+          <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">
+            <input
+              checked={includeInactive}
+              className="size-4 rounded border-slate-300"
+              onChange={(e) => setIncludeInactive(e.target.checked)}
+              type="checkbox"
+            />
+            Incluir inactivos
+          </label>
+        </div>
       </div>
 
       {error ? (
@@ -107,7 +134,7 @@ export function ProductManagementPage() {
         {/* Product List */}
         <article className="rounded-3xl border border-slate-200 p-5">
           <h3 className="text-xl font-semibold text-slate-950">Lista de productos</h3>
-          <p className="mt-2 text-sm text-slate-600">Productos activos del catálogo.</p>
+          <p className="mt-2 text-sm text-slate-600">Productos del catálogo.</p>
 
           {products.isLoading ? (
             <p className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">Cargando productos...</p>
@@ -124,6 +151,9 @@ export function ProductManagementPage() {
                   <div className="space-y-2">
                     <div className="flex flex-wrap items-center gap-2">
                       <h4 className="text-base font-semibold text-slate-950">{product.name}</h4>
+                      {!product.is_active && (
+                        <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600">Inactivo</span>
+                      )}
                       <span
                         className={`rounded-full px-2.5 py-1 text-xs font-medium ${
                           product.is_available ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
@@ -192,7 +222,7 @@ export function ProductManagementPage() {
             <div>
               <h3 className="text-xl font-semibold text-slate-950">{editing ? 'Editar producto' : 'Crear producto'}</h3>
               <p className="mt-2 text-sm text-slate-600">
-                Completá los datos del producto. Los campos marcados son obligatorios.
+                Completá los datos del producto.
               </p>
             </div>
 
@@ -264,6 +294,7 @@ export function ProductManagementPage() {
                   value={form.stock_quantity}
                   onChange={(e) => setForm((s) => ({ ...s, stock_quantity: Number(e.target.value) }))}
                 />
+                <p className="text-xs text-slate-500">El stock no puede ser negativo (mín. 0).</p>
               </div>
             </div>
 
@@ -303,7 +334,7 @@ export function ProductManagementPage() {
                   <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
               </select>
-              <p className="text-xs text-slate-500">Mantené Ctrl/Cmd para seleccionar múltiples.</p>
+              <p className="text-xs text-slate-500">Mantené Ctrl/Cmd para seleccionar múltiples. Opcional.</p>
             </div>
 
             <div className="space-y-2">
@@ -321,7 +352,7 @@ export function ProductManagementPage() {
                   <option key={i.id} value={i.id}>{i.name}</option>
                 ))}
               </select>
-              <p className="text-xs text-slate-500">Mantené Ctrl/Cmd para seleccionar múltiples.</p>
+              <p className="text-xs text-slate-500">Mantené Ctrl/Cmd para seleccionar múltiples. Opcional.</p>
             </div>
 
             <button

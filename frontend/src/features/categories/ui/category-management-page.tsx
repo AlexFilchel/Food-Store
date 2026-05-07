@@ -161,7 +161,7 @@ function CategoryListPanel({ categories, errorMessage, isDeleting, isLoading, on
               <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                 <div className="space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="text-base font-semibold text-slate-950">{category.name}</h4>
+                    <h4 className="max-w-[200px] break-words text-base font-semibold text-slate-950">{category.name}</h4>
                     <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{category.slug}</span>
                     <span
                       className={`rounded-full px-2.5 py-1 text-xs font-medium ${
@@ -171,7 +171,7 @@ function CategoryListPanel({ categories, errorMessage, isDeleting, isLoading, on
                       {category.is_active ? 'Activa' : 'Inactiva'}
                     </span>
                   </div>
-                  <p className="text-sm text-slate-600">{category.description || 'Sin descripción.'}</p>
+                  <p className="line-clamp-2 text-sm text-slate-600">{category.description || 'Sin descripción.'}</p>
                   <dl className="grid gap-2 text-sm text-slate-500 sm:grid-cols-3">
                     <div>
                       <dt className="font-medium text-slate-700">Parent</dt>
