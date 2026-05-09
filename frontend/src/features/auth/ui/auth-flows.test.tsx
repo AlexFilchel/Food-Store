@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { RouterProvider } from 'react-router-dom'
 
 import { createAppRouter } from '@/app/router'
+import { customerProfileClient } from '@/entities/customer-profile/api/customer-profile-client'
 import { authClient } from '@/shared/api/auth-client'
 import type { AuthUser } from '@/shared/stores/auth-store'
 import { useAuthStore } from '@/shared/stores/auth-store'
@@ -16,6 +17,14 @@ const clientUser: AuthUser = {
   roles: ['CLIENT'],
   created_at: '2026-05-06T00:00:00Z',
 }
+
+vi.mock('@/entities/customer-profile/api/customer-profile-client', () => ({
+  customerProfileClient: {
+    get: vi.fn(),
+    update: vi.fn(),
+    changePassword: vi.fn(),
+  },
+}))
 
 function renderRouter(initialEntries: string[]) {
   const queryClient = new QueryClient({
@@ -48,6 +57,7 @@ describe('Auth flows', () => {
       user: clientUser,
     })
     vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    vi.mocked(customerProfileClient.get).mockResolvedValue(clientUser)
 
     const user = userEvent.setup()
     renderRouter(['/login'])
@@ -69,6 +79,7 @@ describe('Auth flows', () => {
       user: clientUser,
     })
     vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    vi.mocked(customerProfileClient.get).mockResolvedValue(clientUser)
 
     const user = userEvent.setup()
     renderRouter(['/register'])
@@ -148,6 +159,7 @@ describe('Auth flows', () => {
   it('logs out, clears local session state and returns to a public route', async () => {
     vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
     vi.spyOn(authClient, 'logout').mockResolvedValue(undefined)
+    vi.mocked(customerProfileClient.get).mockResolvedValue(clientUser)
     useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
 
     const user = userEvent.setup()

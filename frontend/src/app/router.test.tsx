@@ -7,6 +7,7 @@ import { RouterProvider } from 'react-router-dom'
 import { createAppRouter } from '@/app/router'
 import { authClient } from '@/shared/api/auth-client'
 import { httpClient } from '@/shared/api/http-client'
+import { customerProfileClient } from '@/entities/customer-profile/api/customer-profile-client'
 import { useFeedbackStore } from '@/shared/stores/feedback-store'
 import type { AuthUser } from '@/shared/stores/auth-store'
 import { useAuthStore } from '@/shared/stores/auth-store'
@@ -59,6 +60,14 @@ vi.mock('@/entities/public-catalog/api/public-catalog-client', () => ({
   publicCatalogClient: {
     list: () => Promise.resolve({ items: [], total: 0, page: 1, size: 12, pages: 0 }),
     detail: vi.fn(),
+  },
+}))
+
+vi.mock('@/entities/customer-profile/api/customer-profile-client', () => ({
+  customerProfileClient: {
+    get: vi.fn(),
+    update: vi.fn(),
+    changePassword: vi.fn(),
   },
 }))
 
@@ -154,6 +163,7 @@ describe('AppRouter access control', () => {
     useAuthStore.getState().clear()
     useFeedbackStore.getState().clearError()
     vi.restoreAllMocks()
+    vi.mocked(customerProfileClient.get).mockResolvedValue(clientUser)
   })
 
   it('renders the public home route without requiring an access token', async () => {

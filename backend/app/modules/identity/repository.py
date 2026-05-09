@@ -28,6 +28,12 @@ class UserRepository(BaseRepository[User]):
         )
         return result.scalar_one_or_none()
 
+    async def get_active_by_email(self, email: str) -> User | None:
+        result = await self.session.execute(
+            select(User).where(User.email == email, User.deleted_at.is_(None), User.is_active.is_(True))
+        )
+        return result.scalar_one_or_none()
+
 
 class UserRoleRepository(BaseRepository[UserRole]):
     def __init__(self, session: AsyncSession) -> None:
