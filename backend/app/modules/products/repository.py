@@ -48,6 +48,71 @@ class ProductRepository(BaseRepository[Product]):
         result = await self.session.execute(select(func.count()).select_from(self._filtered_statement(**filters).subquery()))
         return int(result.scalar_one())
 
+    def _public_sellable_statement(
+        self,
+        *,
+        search: str | None,
+        category_id: int | None,
+    ) -> Select[tuple[Product]]:
+        statement = select(Product).where(
+            Product.deleted_at.is_(None),
+            Product.is_active.is_(True),
+            Product.is_available.is_(True),
+            Product.stock_quantity > 0,
+        )
+        if search:
+            term = f"%{search.strip().lower()}%"
+            statement = statement.where(
+                or_(
+                    func.lower(Product.name).like(term),
+                    func.lower(Product.slug).like(term),
+                    func.lower(func.coalesce(Product.description, "")).like(term),
+                )
+            )
+        if category_id is not None:
+            statement = statement.where(
+                exists(
+                    select(1)
+                    .select_from(ProductCategory)
+                    .join(Category, Category.id == ProductCategory.category_id)
+                    .where(
+                        ProductCategory.product_id == Product.id,
+                        ProductCategory.category_id == category_id,
+                        Category.deleted_at.is_(None),
+                        Category.is_active.is_(True),
+                    )
+                )
+            )
+        return statement.order_by(Product.updated_at.desc(), Product.id.desc())
+
+    async def list_public_sellable_paginated(self, page_params: PageParams, *, search: str | None, category_id: int | None) -> list[Product]:
+        result = await self.session.execute(
+            self._public_sellable_statement(search=search, category_id=category_id).offset(page_params.offset).limit(page_params.size)
+        )
+        return list(result.scalars().all())
+
+    async def count_public_sellable(self, *, search: str | None, category_id: int | None) -> int:
+        result = await self.session.execute(
+            select(func.count()).select_from(self._public_sellable_statement(search=search, category_id=category_id).subquery())
+        )
+        return int(result.scalar_one())
+
+    async def get_public_sellable_by_id_or_slug(self, product_id_or_slug: str) -> Product | None:
+        statement = select(Product).where(
+            Product.deleted_at.is_(None),
+            Product.is_active.is_(True),
+            Product.is_available.is_(True),
+            Product.stock_quantity > 0,
+        )
+
+        if product_id_or_slug.isdigit():
+            statement = statement.where(Product.id == int(product_id_or_slug))
+        else:
+            statement = statement.where(Product.slug == product_id_or_slug)
+
+        result = await self.session.execute(statement.limit(1))
+        return result.scalar_one_or_none()
+
     async def get_active_by_slug(self, slug: str, *, exclude_id: int | None = None) -> Product | None:
         statement = select(Product).where(Product.slug == slug, Product.deleted_at.is_(None), Product.is_active.is_(True))
         if exclude_id is not None:
@@ -59,7 +124,7 @@ class ProductRepository(BaseRepository[Product]):
         result = await self.session.execute(
             select(Category)
             .join(ProductCategory, ProductCategory.category_id == Category.id)
-            .where(ProductCategory.product_id == product_id, Category.deleted_at.is_(None))
+            .where(ProductCategory.product_id == product_id, Category.deleted_at.is_(None), Category.is_active.is_(True))
             .order_by(Category.name.asc(), Category.id.asc())
         )
         return list(result.scalars().all())

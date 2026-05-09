@@ -1,5 +1,6 @@
 export const routePaths = {
   home: '/',
+  catalogProductDetail: '/catalog/products/:productIdOrSlug',
   login: '/login',
   register: '/register',
   app: '/app',

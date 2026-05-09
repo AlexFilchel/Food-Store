@@ -55,6 +55,13 @@ vi.mock('@/entities/products/api/product-client', () => ({
   },
 }))
 
+vi.mock('@/entities/public-catalog/api/public-catalog-client', () => ({
+  publicCatalogClient: {
+    list: () => Promise.resolve({ items: [], total: 0, page: 1, size: 12, pages: 0 }),
+    detail: vi.fn(),
+  },
+}))
+
 const clientUser: AuthUser = {
   id: 1,
   first_name: 'Ada',
@@ -152,7 +159,26 @@ describe('AppRouter access control', () => {
   it('renders the public home route without requiring an access token', async () => {
     renderRouter(['/'])
 
-    expect(await screen.findByRole('heading', { name: /Food Store/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: /Catálogo público/i })).toBeInTheDocument()
+    expect(useAuthStore.getState().accessToken).toBeNull()
+  })
+
+  it('renders a direct public product detail route without requiring an access token', async () => {
+    const { publicCatalogClient } = await import('@/entities/public-catalog/api/public-catalog-client')
+    vi.mocked(publicCatalogClient.detail).mockResolvedValue({
+      id: 1,
+      name: 'Mila Napolitana',
+      slug: 'mila-napolitana',
+      description: 'Con salsa y queso',
+      price: '30.00',
+      categories: [{ id: 1, name: 'Platos', slug: 'platos' }],
+      ingredients: [{ ingredient_id: 1, name: 'Queso', slug: 'queso', is_removable: true }],
+    })
+
+    renderRouter(['/catalog/products/mila-napolitana'])
+
+    expect(await screen.findByRole('heading', { name: 'Mila Napolitana' })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
     expect(useAuthStore.getState().accessToken).toBeNull()
   })
 

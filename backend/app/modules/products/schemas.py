@@ -102,3 +102,56 @@ class ProductResponse(BaseModel):
                 for ingredient, is_removable in ingredients
             ],
         )
+
+
+class PublicProductCategoryPayload(BaseModel):
+    id: int
+    name: str
+    slug: str
+
+    @classmethod
+    def from_model(cls, category: Category) -> "PublicProductCategoryPayload":
+        return cls(id=category.id, name=category.name, slug=category.slug)
+
+
+class PublicProductIngredientPayload(BaseModel):
+    ingredient_id: int
+    name: str
+    slug: str
+    is_removable: bool
+
+
+class PublicProductResponse(BaseModel):
+    id: int
+    name: str
+    slug: str
+    description: str | None
+    price: str
+    categories: list[PublicProductCategoryPayload]
+    ingredients: list[PublicProductIngredientPayload]
+
+    @classmethod
+    def from_model(
+        cls,
+        product: Product,
+        *,
+        categories: list[Category],
+        ingredients: list[tuple[Ingredient, bool]],
+    ) -> "PublicProductResponse":
+        return cls(
+            id=product.id,
+            name=product.name,
+            slug=product.slug,
+            description=product.description,
+            price=f"{product.price:.2f}",
+            categories=[PublicProductCategoryPayload.from_model(category) for category in categories],
+            ingredients=[
+                PublicProductIngredientPayload(
+                    ingredient_id=ingredient.id,
+                    name=ingredient.name,
+                    slug=ingredient.slug,
+                    is_removable=is_removable,
+                )
+                for ingredient, is_removable in ingredients
+            ],
+        )

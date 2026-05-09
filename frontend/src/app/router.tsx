@@ -24,6 +24,7 @@ import { HomePage } from '@/pages/home-page/ui/home-page'
 import { LoginPage } from '@/pages/login-page/ui/login-page'
 import { NotFoundPage } from '@/pages/not-found-page/ui/not-found-page'
 import { OrdersPage } from '@/pages/orders-page/ui/orders-page'
+import { PublicProductDetailPage } from '@/pages/public-product-detail-page/ui/public-product-detail-page'
 import { RegisterPage } from '@/pages/register-page/ui/register-page'
 import { StockPage } from '@/pages/stock-page/ui/stock-page'
 import { GlobalFeedbackBanner } from '@/shared/ui/global-feedback-banner'
@@ -42,6 +43,7 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
     <Route element={<RootLayout />}>
       <Route element={<ShellEventBridge />}>
         <Route index element={<HomePage />} />
+        <Route path={routePaths.catalogProductDetail} element={<PublicProductDetailPage />} />
         <Route
           element={
             <AnonymousOnlyGuard>

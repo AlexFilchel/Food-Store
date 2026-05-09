@@ -4,6 +4,7 @@ from app.modules.auth.router import router as auth_router
 from app.modules.categories.router import router as category_router
 from app.modules.ingredients.router import allergen_router, ingredient_router
 from app.modules.products.router import router as product_router
+from app.modules.products.public_router import router as public_catalog_product_router
 from app.modules.system.router import router as system_router
 
 api_router = APIRouter()
@@ -12,4 +13,5 @@ api_router.include_router(category_router)
 api_router.include_router(ingredient_router)
 api_router.include_router(allergen_router)
 api_router.include_router(product_router)
+api_router.include_router(public_catalog_product_router)
 api_router.include_router(system_router)

@@ -19,7 +19,7 @@ from app.modules.products.errors import (
     product_not_found,
 )
 from app.modules.products.model import Product
-from app.modules.products.schemas import ProductCreateRequest, ProductResponse, ProductUpdateRequest
+from app.modules.products.schemas import ProductCreateRequest, ProductResponse, ProductUpdateRequest, PublicProductResponse
 
 SLUG_INVALID_CHARS = re.compile(r"[^a-z0-9]+")
 
@@ -35,6 +35,27 @@ class ProductService:
     async def get_detail(self, uow: SqlAlchemyUnitOfWork, product_id: int) -> ProductResponse:
         async with uow:
             return await self._to_response(uow, await self._get_product_or_fail(uow, product_id))
+
+    async def list_public_products(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        page_params: PageParams,
+        *,
+        search: str | None,
+        category_id: int | None,
+    ) -> PaginatedResponse[PublicProductResponse]:
+        async with uow:
+            products = await uow.products.list_public_sellable_paginated(page_params, search=search, category_id=category_id)
+            total = await uow.products.count_public_sellable(search=search, category_id=category_id)
+            items = [await self._to_public_response(uow, product) for product in products]
+            return make_paginated_response(items=items, total=total, page=page_params.page, size=page_params.size)
+
+    async def get_public_detail(self, uow: SqlAlchemyUnitOfWork, product_id_or_slug: str) -> PublicProductResponse:
+        async with uow:
+            product = await uow.products.get_public_sellable_by_id_or_slug(product_id_or_slug)
+            if product is None:
+                raise product_not_found()
+            return await self._to_public_response(uow, product)
 
     async def create_product(self, uow: SqlAlchemyUnitOfWork, payload: ProductCreateRequest) -> ProductResponse:
         async with uow:
@@ -107,6 +128,11 @@ class ProductService:
         categories = await uow.products.list_categories_for_product(product.id)
         ingredients = await uow.products.list_ingredients_for_product(product.id)
         return ProductResponse.from_model(product, categories=categories, ingredients=ingredients)
+
+    async def _to_public_response(self, uow: SqlAlchemyUnitOfWork, product: Product) -> PublicProductResponse:
+        categories = await uow.products.list_categories_for_product(product.id)
+        ingredients = await uow.products.list_ingredients_for_product(product.id)
+        return PublicProductResponse.from_model(product, categories=categories, ingredients=ingredients)
 
     async def _validate_categories(self, uow: SqlAlchemyUnitOfWork, category_ids: list[int]) -> None:
         ids = sorted(set(category_ids))
