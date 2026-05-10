@@ -10,6 +10,7 @@ from app.core.config import get_settings
 def import_models() -> None:
     from app.modules.auth import model as _auth_models  # noqa: F401
     from app.modules.categories import model as _category_models  # noqa: F401
+    from app.modules.delivery_addresses import model as _delivery_address_models  # noqa: F401
     from app.modules.identity import model as _identity_models  # noqa: F401
     from app.modules.ingredients import model as _ingredient_models  # noqa: F401
     from app.modules.orders import model as _order_models  # noqa: F401

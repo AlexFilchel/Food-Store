@@ -1,9 +1,10 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { AppPage } from '@/pages/app-page/ui/app-page'
 import { customerProfileClient } from '@/entities/customer-profile/api/customer-profile-client'
+import { deliveryAddressClient } from '@/entities/delivery-addresses/api/delivery-address-client'
 import { useAuthStore } from '@/shared/stores/auth-store'
 
 vi.mock('@/entities/customer-profile/api/customer-profile-client', () => ({
@@ -11,6 +12,17 @@ vi.mock('@/entities/customer-profile/api/customer-profile-client', () => ({
     get: vi.fn(),
     update: vi.fn(),
     changePassword: vi.fn(),
+  },
+}))
+
+vi.mock('@/entities/delivery-addresses/api/delivery-address-client', () => ({
+  deliveryAddressClient: {
+    list: vi.fn(),
+    detail: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    setDefault: vi.fn(),
   },
 }))
 
@@ -23,6 +35,23 @@ const profile = {
   created_at: '2026-05-06T00:00:00Z',
 }
 
+const address = {
+  id: 1,
+  recipient_name: 'Grace Hopper',
+  phone: '+5491112345678',
+  street: 'Calle 1',
+  street_number: '123',
+  floor: null,
+  apartment: null,
+  city: 'CABA',
+  province: 'Buenos Aires',
+  postal_code: '1000',
+  reference: null,
+  is_default: true,
+  created_at: '2026-05-06T00:00:00Z',
+  updated_at: '2026-05-06T00:00:00Z',
+}
+
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
@@ -32,118 +61,195 @@ function renderPage() {
   )
 }
 
-describe('AppPage customer profile', () => {
+async function selectProvince(user: ReturnType<typeof userEvent.setup>, query: string, province: string) {
+  const provinceInput = screen.getByRole('combobox', { name: 'Provincia' })
+  await user.clear(provinceInput)
+  await user.click(provinceInput)
+  if (query) {
+    await user.type(provinceInput, query)
+  }
+  await user.click(screen.getByRole('option', { name: province }))
+}
+
+describe('AppPage customer profile and addresses', () => {
   beforeEach(() => {
     vi.restoreAllMocks()
     useAuthStore.getState().clear()
     vi.mocked(customerProfileClient.get).mockResolvedValue(profile)
+    vi.mocked(deliveryAddressClient.list).mockResolvedValue([])
   })
 
   it('renders authenticated customer profile content', async () => {
     renderPage()
     expect(await screen.findByRole('heading', { name: 'Espacio del cliente' })).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Mi perfil' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Mis direcciones de entrega' })).toBeInTheDocument()
   })
 
-  it('updates profile and syncs auth-store user', async () => {
-    vi.mocked(customerProfileClient.update).mockResolvedValue({ ...profile, first_name: 'Ada' })
+  it('renders loading state for address list', async () => {
+    vi.mocked(deliveryAddressClient.list).mockImplementationOnce(() => new Promise(() => undefined))
+
+    renderPage()
+
+    expect(await screen.findByText('Cargando direcciones...')).toBeInTheDocument()
+  })
+
+  it('renders empty/error states for address list', async () => {
+    renderPage()
+    expect(await screen.findByText('Todavía no tenés direcciones guardadas.')).toBeInTheDocument()
+
+    vi.mocked(deliveryAddressClient.list).mockRejectedValueOnce({
+      isAxiosError: true,
+      response: { status: 500, data: { detail: 'Fallo API', code: 'SERVER_ERROR', status: 500, title: 'Error' } },
+    })
+    renderPage()
+    expect(await screen.findByRole('alert')).toHaveTextContent('Fallo API')
+  })
+
+  it('creates address and resets form', async () => {
+    vi.mocked(deliveryAddressClient.create).mockResolvedValue(address)
     const user = userEvent.setup()
     renderPage()
 
-    await screen.findByDisplayValue('Grace')
-    await user.clear(screen.getByLabelText('Nombre'))
-    await user.type(screen.getByLabelText('Nombre'), 'Ada')
-    await user.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    await screen.findByRole('heading', { name: 'Mis direcciones de entrega' })
+    await user.type(screen.getByLabelText('Destinatario'), 'Grace Hopper')
+    await user.type(screen.getByLabelText('Teléfono'), '+5491112345678')
+    await user.type(screen.getByLabelText('Calle'), 'Calle 1')
+    await user.type(screen.getByLabelText('Número'), '123')
+    await user.type(screen.getByLabelText('Ciudad'), 'CABA')
+    await selectProvince(user, 'Buenos', 'Buenos Aires')
+    await user.type(screen.getByLabelText('Código postal'), '1000')
+    await user.click(screen.getByRole('button', { name: 'Agregar dirección' }))
 
-    await waitFor(() => expect(customerProfileClient.update).toHaveBeenCalled())
-    expect(useAuthStore.getState().user?.first_name).toBe('Ada')
+    await waitFor(() => expect(deliveryAddressClient.create).toHaveBeenCalled())
+    expect(screen.getByLabelText('Destinatario')).toHaveValue('')
   })
 
-  it('shows profile errors preserving form values', async () => {
-    vi.mocked(customerProfileClient.update).mockRejectedValue({
+  it('updates, deletes and marks default with single visible default', async () => {
+    const secondAddress = { ...address, id: 2, is_default: false, street_number: '124' }
+    vi.mocked(deliveryAddressClient.list)
+      .mockResolvedValueOnce([address, secondAddress])
+      .mockResolvedValue([{ ...address, is_default: false }, { ...secondAddress, is_default: true }])
+    vi.mocked(deliveryAddressClient.update).mockResolvedValue({ ...address, city: 'Rosario' })
+    vi.mocked(deliveryAddressClient.remove).mockResolvedValue(undefined)
+    vi.mocked(deliveryAddressClient.setDefault).mockResolvedValue({ ...secondAddress, is_default: true })
+    const user = userEvent.setup()
+    renderPage()
+
+    await screen.findByText('Calle 1 123, CABA')
+    await user.click(screen.getAllByRole('button', { name: 'Editar' })[0])
+    await user.clear(screen.getByLabelText('Ciudad'))
+    await user.type(screen.getByLabelText('Ciudad'), 'Rosario')
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(deliveryAddressClient.update).toHaveBeenCalled())
+    await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[0])
+    await waitFor(() => expect(deliveryAddressClient.remove).toHaveBeenCalled())
+    await user.click(screen.getByRole('button', { name: 'Marcar como predeterminada' }))
+    await waitFor(() => expect(deliveryAddressClient.setDefault).toHaveBeenCalled())
+    await waitFor(() => expect(vi.mocked(deliveryAddressClient.list).mock.calls.length).toBeGreaterThanOrEqual(2))
+
+    expect(screen.getAllByText('Predeterminada')).toHaveLength(1)
+    const secondCard = screen.getByText('Calle 1 124, CABA').closest('div')
+    expect(secondCard).not.toBeNull()
+    expect(within(secondCard as HTMLElement).getByText('Predeterminada')).toBeInTheDocument()
+  })
+
+  it('preserves address form on validation errors without sensitive leaks', async () => {
+    vi.mocked(deliveryAddressClient.create).mockRejectedValue({
       isAxiosError: true,
       response: {
-        status: 409,
+        status: 422,
         data: {
-          title: 'Duplicate Email',
-          detail: 'The provided email is already in use.',
-          status: 409,
-          code: 'CUSTOMER_PROFILE_DUPLICATE_EMAIL',
-          accessToken: 'nope',
+          title: 'Validation Error',
+          detail: 'The request contains invalid fields.',
+          status: 422,
+          code: 'VALIDATION_ERROR',
+          errors: [{ field: 'body.recipient_name', message: 'String should have at least 1 character' }],
+          accessToken: 'secret',
         },
       },
     })
 
     const user = userEvent.setup()
     renderPage()
-    await screen.findByDisplayValue('grace@example.com')
-    await user.clear(screen.getByLabelText('Email'))
-    await user.type(screen.getByLabelText('Email'), 'taken@example.com')
-    await user.click(screen.getByRole('button', { name: 'Guardar perfil' }))
+    await screen.findByRole('heading', { name: 'Mis direcciones de entrega' })
+    await user.type(screen.getByLabelText('Destinatario'), 'X')
+    await selectProvince(user, 'Buenos', 'Buenos Aires')
+    await user.click(screen.getByRole('button', { name: 'Agregar dirección' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('The provided email is already in use.')
-    expect(screen.getByLabelText('Email')).toHaveValue('taken@example.com')
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.getByLabelText('Destinatario')).toHaveValue('X')
     expect(screen.queryByText(/accessToken/i)).not.toBeInTheDocument()
   })
 
-  it('clears password fields on successful password change', async () => {
-    vi.mocked(customerProfileClient.changePassword).mockResolvedValue(undefined)
+  it('requires selecting an Argentine province from a prefix-filtered list', async () => {
+    vi.mocked(deliveryAddressClient.create).mockResolvedValue({ ...address, province: 'Mendoza' })
     const user = userEvent.setup()
     renderPage()
 
-    await screen.findByRole('heading', { name: 'Cambiar contraseña' })
-    await user.type(screen.getByLabelText('Contraseña actual'), 'StrongPass123!')
-    await user.type(screen.getByLabelText('Nueva contraseña'), 'NewPass12345!')
-    await user.type(screen.getByLabelText('Confirmar nueva contraseña'), 'NewPass12345!')
-    await user.click(screen.getByRole('button', { name: 'Actualizar contraseña' }))
+    await screen.findByRole('heading', { name: 'Mis direcciones de entrega' })
+    await user.click(screen.getByRole('combobox', { name: 'Provincia' }))
+    expect(screen.getByRole('option', { name: 'Mendoza' })).toBeInTheDocument()
+    expect(screen.getByRole('option', { name: 'Buenos Aires' })).toBeInTheDocument()
 
-    await waitFor(() => expect(customerProfileClient.changePassword).toHaveBeenCalled())
-    expect(screen.getByLabelText('Contraseña actual')).toHaveValue('')
-    expect(screen.getByLabelText('Nueva contraseña')).toHaveValue('')
-    expect(screen.getByLabelText('Confirmar nueva contraseña')).toHaveValue('')
+    await user.type(screen.getByRole('combobox', { name: 'Provincia' }), 'Men')
+    expect(screen.getByRole('option', { name: 'Mendoza' })).toBeInTheDocument()
+    expect(screen.queryByRole('option', { name: 'Buenos Aires' })).not.toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Agregar dirección' }))
+    expect(await screen.findByText('Seleccioná una provincia de la lista.')).toBeInTheDocument()
+    expect(deliveryAddressClient.create).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('option', { name: 'Mendoza' }))
+    await user.type(screen.getByLabelText('Destinatario'), 'Grace Hopper')
+    await user.type(screen.getByLabelText('Teléfono'), '+5491112345678')
+    await user.type(screen.getByLabelText('Calle'), 'Calle 1')
+    await user.type(screen.getByLabelText('Número'), '123')
+    await user.type(screen.getByLabelText('Ciudad'), 'Godoy Cruz')
+    await user.type(screen.getByLabelText('Código postal'), '5501')
+    await user.click(screen.getByRole('button', { name: 'Agregar dirección' }))
+
+    await waitFor(() => expect(deliveryAddressClient.create).toHaveBeenCalledWith(expect.objectContaining({ province: 'Mendoza' })))
   })
 
-  it('blocks password mismatch before API call', async () => {
-    const user = userEvent.setup()
-    renderPage()
-
-    await screen.findByRole('heading', { name: 'Cambiar contraseña' })
-    await user.type(screen.getByLabelText('Contraseña actual'), 'StrongPass123!')
-    await user.type(screen.getByLabelText('Nueva contraseña'), 'NewPass12345!')
-    await user.type(screen.getByLabelText('Confirmar nueva contraseña'), 'Different123!')
-    await user.click(screen.getByRole('button', { name: 'Actualizar contraseña' }))
-
-    expect(screen.getByRole('alert')).toHaveTextContent('La confirmación no coincide con la nueva contraseña.')
-    expect(customerProfileClient.changePassword).not.toHaveBeenCalled()
-  })
-
-  it('renders password API errors safely', async () => {
-    vi.mocked(customerProfileClient.changePassword).mockRejectedValue({
+  it('clears stale address validation errors before editing successfully', async () => {
+    vi.mocked(deliveryAddressClient.list).mockResolvedValue([address])
+    vi.mocked(deliveryAddressClient.create).mockRejectedValue({
       isAxiosError: true,
       response: {
-        status: 401,
+        status: 422,
         data: {
-          title: 'Invalid Current Password',
-          detail: 'The current password is incorrect.',
-          status: 401,
-          code: 'CUSTOMER_PROFILE_INVALID_CURRENT_PASSWORD',
-          refreshToken: 'super-secret',
-          security_context: { trace: 'internal' },
+          title: 'Validation Error',
+          detail: 'The request contains invalid fields.',
+          status: 422,
+          code: 'VALIDATION_ERROR',
+          errors: [{ field: 'body.recipient_name', message: 'String should have at least 1 character' }],
         },
       },
     })
+    vi.mocked(deliveryAddressClient.update).mockResolvedValue({ ...address, city: 'Rosario' })
 
     const user = userEvent.setup()
     renderPage()
-    await screen.findByRole('heading', { name: 'Cambiar contraseña' })
 
-    await user.type(screen.getByLabelText('Contraseña actual'), 'WrongPass123!')
-    await user.type(screen.getByLabelText('Nueva contraseña'), 'NewPass12345!')
-    await user.type(screen.getByLabelText('Confirmar nueva contraseña'), 'NewPass12345!')
-    await user.click(screen.getByRole('button', { name: 'Actualizar contraseña' }))
+    await screen.findByText('Calle 1 123, CABA')
+    await selectProvince(user, 'Buenos', 'Buenos Aires')
+    await user.click(screen.getByRole('button', { name: 'Agregar dirección' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('The current password is incorrect.')
-    expect(screen.queryByText(/super-secret/i)).not.toBeInTheDocument()
-    expect(screen.queryByText(/security_context/i)).not.toBeInTheDocument()
+    expect(await screen.findByRole('alert')).toHaveTextContent('The request contains invalid fields.')
+    expect(screen.getByText('String should have at least 1 character')).toBeInTheDocument()
+
+    await user.click(screen.getByRole('button', { name: 'Editar' }))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.queryByText('String should have at least 1 character')).not.toBeInTheDocument()
+
+    await user.clear(screen.getByLabelText('Ciudad'))
+    await user.type(screen.getByLabelText('Ciudad'), 'Rosario')
+    await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
+
+    await waitFor(() => expect(deliveryAddressClient.update).toHaveBeenCalled())
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+    expect(screen.getByText('Dirección guardada correctamente.')).toBeInTheDocument()
   })
 })

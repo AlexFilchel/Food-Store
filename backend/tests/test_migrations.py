@@ -42,6 +42,8 @@ async def test_alembic_upgrade_and_downgrade_work_on_empty_database(tmp_path):
         assert product_categories.scalar_one() == 'product_categories'
         product_ingredients = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='product_ingredients'"))
         assert product_ingredients.scalar_one() == 'product_ingredients'
+        delivery_addresses = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='table' AND name='delivery_addresses'"))
+        assert delivery_addresses.scalar_one() == 'delivery_addresses'
         categories_indexes = await connection.execute(
             text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='categories'")
         )
@@ -58,6 +60,9 @@ async def test_alembic_upgrade_and_downgrade_work_on_empty_database(tmp_path):
         product_indexes = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='products'"))
         product_index_names = {row[0] for row in product_indexes.fetchall()}
         assert 'uq_products_active_slug' in product_index_names
+        delivery_indexes = await connection.execute(text("SELECT name FROM sqlite_master WHERE type='index' AND tbl_name='delivery_addresses'"))
+        delivery_index_names = {row[0] for row in delivery_indexes.fetchall()}
+        assert 'uq_delivery_addresses_default_per_user' in delivery_index_names
     await engine.dispose()
 
     command.downgrade(config, 'base')
@@ -80,3 +85,12 @@ def test_product_migration_uses_postgresql_safe_predicates():
     content = migration.read_text(encoding="utf-8")
     assert "deleted_at IS NULL AND is_active IS TRUE" in content
     assert "deleted_at IS NULL AND is_active = 1" in content
+
+
+def test_delivery_addresses_migration_uses_postgresql_safe_predicates():
+    migration = Path(__file__).resolve().parents[1] / "alembic" / "versions" / "20260510_0006_delivery_addresses.py"
+    content = migration.read_text(encoding="utf-8")
+    assert "deleted_at IS NULL AND is_default IS TRUE" in content
+    assert "deleted_at IS NULL AND is_default = 1" in content
+    assert 'server_default=sa.text("false")' in content
+    assert 'server_default=sa.text("0")' not in content

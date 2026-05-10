@@ -8,6 +8,7 @@ import { createAppRouter } from '@/app/router'
 import { authClient } from '@/shared/api/auth-client'
 import { httpClient } from '@/shared/api/http-client'
 import { customerProfileClient } from '@/entities/customer-profile/api/customer-profile-client'
+import { deliveryAddressClient } from '@/entities/delivery-addresses/api/delivery-address-client'
 import { useFeedbackStore } from '@/shared/stores/feedback-store'
 import type { AuthUser } from '@/shared/stores/auth-store'
 import { useAuthStore } from '@/shared/stores/auth-store'
@@ -68,6 +69,17 @@ vi.mock('@/entities/customer-profile/api/customer-profile-client', () => ({
     get: vi.fn(),
     update: vi.fn(),
     changePassword: vi.fn(),
+  },
+}))
+
+vi.mock('@/entities/delivery-addresses/api/delivery-address-client', () => ({
+  deliveryAddressClient: {
+    list: vi.fn(),
+    detail: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    remove: vi.fn(),
+    setDefault: vi.fn(),
   },
 }))
 
@@ -164,6 +176,7 @@ describe('AppRouter access control', () => {
     useFeedbackStore.getState().clearError()
     vi.restoreAllMocks()
     vi.mocked(customerProfileClient.get).mockResolvedValue(clientUser)
+    vi.mocked(deliveryAddressClient.list).mockResolvedValue([])
   })
 
   it('renders the public home route without requiring an access token', async () => {

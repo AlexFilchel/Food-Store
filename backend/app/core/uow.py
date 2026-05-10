@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.core.database import get_session_factory
 from app.modules.auth.repository import RefreshTokenRepository
 from app.modules.categories.repository import CategoryRepository
+from app.modules.delivery_addresses.repository import DeliveryAddressRepository
 from app.modules.identity.repository import RoleRepository, UserRepository, UserRoleRepository
 from app.modules.ingredients.repository import AllergenRepository, IngredientAllergenRepository, IngredientRepository
 from app.modules.orders.repository import OrderStateRepository
@@ -21,6 +22,7 @@ class SqlAlchemyUnitOfWork:
         self.session = self._session_factory()
         self.refresh_tokens = RefreshTokenRepository(self.session)
         self.categories = CategoryRepository(self.session)
+        self.delivery_addresses = DeliveryAddressRepository(self.session)
         self.roles = RoleRepository(self.session)
         self.users = UserRepository(self.session)
         self.user_roles = UserRoleRepository(self.session)
