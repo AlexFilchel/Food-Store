@@ -24,6 +24,14 @@
       "sessions": 2,
       "memories": 18,
       "prompts": 9
+    },
+    {
+      "id": "8114504a",
+      "created_by": "filch",
+      "created_at": "2026-05-10T15:58:10Z",
+      "sessions": 2,
+      "memories": 36,
+      "prompts": 19
     }
   ]
 }
