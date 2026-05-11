@@ -1,6 +1,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
+import { MemoryRouter } from 'react-router-dom'
 
 import { AppPage } from '@/pages/app-page/ui/app-page'
 import { customerProfileClient } from '@/entities/customer-profile/api/customer-profile-client'
@@ -55,9 +56,11 @@ const address = {
 function renderPage() {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   return render(
-    <QueryClientProvider client={queryClient}>
-      <AppPage />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <AppPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 

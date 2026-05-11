@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { routePaths } from '@/app/routes/route-config'
 import { usePublicCatalogListQuery } from '@/features/public-catalog/model/hooks'
 
 export function HomePage() {
@@ -68,9 +69,9 @@ export function HomePage() {
 
             <Link
               className="inline-flex rounded-lg bg-sky-600 px-3 py-2 text-sm font-medium text-white hover:bg-sky-700"
-              to={`/catalog/products/${product.slug}`}
+              to={routePaths.catalogProductDetail.replace(':productIdOrSlug', product.slug)}
             >
-              Ver detalle
+              Ver detalle y agregar
             </Link>
           </article>
         ))}

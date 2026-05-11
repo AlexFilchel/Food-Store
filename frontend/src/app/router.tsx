@@ -20,6 +20,7 @@ import { AdminIngredientsPage } from '@/pages/admin-ingredients-page/ui/admin-in
 import { AdminPage } from '@/pages/admin-page/ui/admin-page'
 import { AdminProductsPage } from '@/pages/admin-products-page/ui/admin-products-page'
 import { AppPage } from '@/pages/app-page/ui/app-page'
+import { CartPage } from '@/pages/cart-page/ui/cart-page'
 import { HomePage } from '@/pages/home-page/ui/home-page'
 import { LoginPage } from '@/pages/login-page/ui/login-page'
 import { NotFoundPage } from '@/pages/not-found-page/ui/not-found-page'
@@ -28,6 +29,7 @@ import { PublicProductDetailPage } from '@/pages/public-product-detail-page/ui/p
 import { RegisterPage } from '@/pages/register-page/ui/register-page'
 import { StockPage } from '@/pages/stock-page/ui/stock-page'
 import { GlobalFeedbackBanner } from '@/shared/ui/global-feedback-banner'
+import { PublicStorefrontShell } from '@/shared/ui/public-storefront-shell'
 import { AuthenticatedShellLayout } from '@/widgets/app-shell/ui/authenticated-shell-layout'
 
 export function AppRouter() {
@@ -42,8 +44,11 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
   const routes = createRoutesFromElements(
     <Route element={<RootLayout />}>
       <Route element={<ShellEventBridge />}>
-        <Route index element={<HomePage />} />
-        <Route path={routePaths.catalogProductDetail} element={<PublicProductDetailPage />} />
+        <Route element={<PublicStorefrontLayout />}>
+          <Route index element={<HomePage />} />
+          <Route path={routePaths.catalogProductDetail} element={<PublicProductDetailPage />} />
+          <Route path={routePaths.cart} element={<CartPage />} />
+        </Route>
         <Route
           element={
             <AnonymousOnlyGuard>
@@ -102,5 +107,13 @@ function RootLayout() {
       <GlobalFeedbackBanner />
       <Outlet />
     </>
+  )
+}
+
+function PublicStorefrontLayout() {
+  return (
+    <PublicStorefrontShell>
+      <Outlet />
+    </PublicStorefrontShell>
   )
 }

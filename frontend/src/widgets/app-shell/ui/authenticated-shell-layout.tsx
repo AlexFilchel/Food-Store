@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
-import { getNavigationForRoles } from '@/app/routes/route-config'
+import { getNavigationForRoles, routePaths } from '@/app/routes/route-config'
 import { LogoutButton } from '@/features/auth/ui/logout-button'
 import { cn } from '@/shared/lib/class-names'
 import { useAuthStore } from '@/shared/stores/auth-store'
@@ -29,6 +29,12 @@ export function AuthenticatedShellLayout() {
           </div>
 
           <div className="hidden items-center gap-3 md:flex">
+            <Link
+              className="inline-flex rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              to={routePaths.home}
+            >
+              Catálogo
+            </Link>
             <UserSummary />
             <LogoutButton className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" />
           </div>

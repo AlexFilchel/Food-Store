@@ -9,6 +9,7 @@ import { authClient } from '@/shared/api/auth-client'
 import { httpClient } from '@/shared/api/http-client'
 import { customerProfileClient } from '@/entities/customer-profile/api/customer-profile-client'
 import { deliveryAddressClient } from '@/entities/delivery-addresses/api/delivery-address-client'
+import { useCartStore } from '@/shared/stores/cart-store'
 import { useFeedbackStore } from '@/shared/stores/feedback-store'
 import type { AuthUser } from '@/shared/stores/auth-store'
 import { useAuthStore } from '@/shared/stores/auth-store'
@@ -173,6 +174,7 @@ describe('AppRouter access control', () => {
   beforeEach(() => {
     localStorage.clear()
     useAuthStore.getState().clear()
+    useCartStore.getState().clear()
     useFeedbackStore.getState().clearError()
     vi.restoreAllMocks()
     vi.mocked(customerProfileClient.get).mockResolvedValue(clientUser)
@@ -205,6 +207,24 @@ describe('AppRouter access control', () => {
     expect(useAuthStore.getState().accessToken).toBeNull()
   })
 
+  it('renders the public cart route for anonymous users and shows the persisted cart indicator', async () => {
+    useCartStore.getState().addItem({
+      productId: 1,
+      slug: 'mila-napolitana',
+      name: 'Mila Napolitana',
+      unitPrice: '30.00',
+      quantity: 2,
+      removedIngredients: [],
+    })
+
+    renderRouter(['/cart'])
+
+    expect(await screen.findByRole('heading', { name: 'Tu carrito' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Carrito (2)' })).toHaveAttribute('href', '/cart')
+    expect(screen.queryByRole('heading', { name: 'Iniciar sesión' })).not.toBeInTheDocument()
+    expect(useAuthStore.getState().accessToken).toBeNull()
+  })
+
   it('redirects anonymous users away from protected routes', async () => {
     renderRouter(['/app'])
 
@@ -219,6 +239,7 @@ describe('AppRouter access control', () => {
 
     expect(screen.getByText('Validando sesión...')).toBeInTheDocument()
     expect(await screen.findByRole('heading', { name: 'Espacio del cliente' })).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: 'Catálogo' })).toHaveAttribute('href', '/')
   })
 
   it('clears an invalid persisted session and redirects to login', async () => {
