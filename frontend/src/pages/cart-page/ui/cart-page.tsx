@@ -2,7 +2,11 @@ import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { routePaths } from '@/app/routes/route-config'
+import { useCheckoutPreflightMutation } from '@/features/checkout/model/hooks'
+import { useDeliveryAddressListQuery } from '@/features/delivery-addresses/model/hooks'
+import { getProblemDetails } from '@/shared/api/problem-details'
 import { formatPriceFromCents, multiplyPriceByQuantity } from '@/shared/lib/cart-pricing'
+import { useAuthStore } from '@/shared/stores/auth-store'
 import { useCartStore } from '@/shared/stores/cart-store'
 
 function getCustomizationSummary(names: readonly string[]) {
@@ -21,12 +25,47 @@ export function CartPage() {
   const updateQuantity = useCartStore((state) => state.updateQuantity)
   const removeLine = useCartStore((state) => state.removeLine)
   const clear = useCartStore((state) => state.clear)
+  const isAuthenticated = useAuthStore((state) => state.isAuthenticated())
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
+  const [selectedAddressId, setSelectedAddressId] = useState<number | undefined>(undefined)
+  const [checkoutError, setCheckoutError] = useState<string | null>(null)
   const checkoutPayload = toCheckoutPayload()
+  const checkoutPreflight = useCheckoutPreflightMutation()
+  const addressQuery = useDeliveryAddressListQuery()
+  const addresses = addressQuery.data ?? []
+
+  const defaultAddressId = addresses.find((address) => address.is_default)?.id
+  const effectiveAddressId = selectedAddressId ?? defaultAddressId
 
   const handleClear = () => {
     clear()
     setStatusMessage('Se vació el carrito.')
+  }
+
+  const handleCheckout = async () => {
+    setStatusMessage(null)
+    setCheckoutError(null)
+
+    if (items.length === 0) {
+      setCheckoutError('Tu carrito está vacío. Volvé al catálogo para agregar productos.')
+      return
+    }
+
+    if (!isAuthenticated) {
+      setStatusMessage('Necesitás iniciar sesión para continuar al checkout.')
+      return
+    }
+
+    try {
+      const summary = await checkoutPreflight.mutateAsync({
+        ...checkoutPayload,
+        delivery_address_id: effectiveAddressId,
+      })
+      setStatusMessage(`Preflight validado. Subtotal confirmado: $${summary.subtotal}`)
+    } catch (error) {
+      const problem = getProblemDetails(error)
+      setCheckoutError(problem?.detail ?? 'No pudimos validar el checkout. Revisá tu carrito e intentá de nuevo.')
+    }
   }
 
   return (
@@ -129,17 +168,36 @@ export function CartPage() {
             </dl>
 
             <div className="space-y-3 rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
-              <p className="font-medium text-slate-900">Checkout próximamente</p>
-              <p>Cuando habilitemos el checkout vamos a retomar estas {checkoutPayload.items.length} línea(s) para validar stock, precios y pago.</p>
+              <p className="font-medium text-slate-900">Preflight de checkout</p>
+              <p>Validamos estas {checkoutPayload.items.length} línea(s) contra stock, disponibilidad y precios actuales del backend.</p>
+              {isAuthenticated ? (
+                <label className="block">
+                  <span className="mb-1 block text-xs font-medium text-slate-700">Dirección de entrega</span>
+                  <select
+                    className="w-full rounded-xl border border-slate-300 px-3 py-2"
+                    onChange={(event) => setSelectedAddressId(event.target.value ? Number(event.target.value) : undefined)}
+                    value={effectiveAddressId ?? ''}
+                  >
+                    <option value="">Usar dirección predeterminada</option>
+                    {addresses.map((address) => (
+                      <option key={address.id} value={address.id}>
+                        {address.street} {address.street_number}, {address.city}{address.is_default ? ' (predeterminada)' : ''}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+              ) : null}
             </div>
 
             <button
               className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800"
-              onClick={() => setStatusMessage('El checkout todavía no está disponible. Por ahora solo podés revisar tu carrito.')}
+              onClick={handleCheckout}
               type="button"
             >
               Continuar al checkout
             </button>
+
+            {checkoutError ? <p className="text-sm text-rose-700">{checkoutError}</p> : null}
 
             <button
               className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 hover:bg-slate-50"

@@ -30,9 +30,9 @@ export interface CartItemInput {
 
 export interface CartCheckoutPayload {
   items: Array<{
-    productId: number
+    product_id: number
     quantity: number
-    removedIngredientIds: number[]
+    removed_ingredient_ids: number[]
   }>
 }
 
@@ -188,9 +188,9 @@ export const useCartStore = create<CartStore>()(
       subtotalFormatted: () => formatPriceFromCents(get().subtotalCents()),
       toCheckoutPayload: () => ({
         items: get().items.map((item) => ({
-          productId: item.productId,
+          product_id: item.productId,
           quantity: item.quantity,
-          removedIngredientIds: item.removedIngredientIds,
+          removed_ingredient_ids: item.removedIngredientIds,
         })),
       }),
     }),
