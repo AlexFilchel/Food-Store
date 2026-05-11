@@ -8,7 +8,7 @@ from app.modules.categories.repository import CategoryRepository
 from app.modules.delivery_addresses.repository import DeliveryAddressRepository
 from app.modules.identity.repository import RoleRepository, UserRepository, UserRoleRepository
 from app.modules.ingredients.repository import AllergenRepository, IngredientAllergenRepository, IngredientRepository
-from app.modules.orders.repository import OrderStateRepository
+from app.modules.orders.repository import OrderHistoryRepository, OrderItemRepository, OrderRepository, OrderStateRepository
 from app.modules.payments.repository import PaymentMethodRepository
 from app.modules.products.repository import ProductRepository
 
@@ -30,6 +30,9 @@ class SqlAlchemyUnitOfWork:
         self.allergens = AllergenRepository(self.session)
         self.ingredient_allergens = IngredientAllergenRepository(self.session)
         self.order_states = OrderStateRepository(self.session)
+        self.orders = OrderRepository(self.session)
+        self.order_items = OrderItemRepository(self.session)
+        self.order_history = OrderHistoryRepository(self.session)
         self.payment_methods = PaymentMethodRepository(self.session)
         self.products = ProductRepository(self.session)
         return self

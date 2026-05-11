@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 import { routePaths } from '@/app/routes/route-config'
 import { useCheckoutPreflightMutation } from '@/features/checkout/model/hooks'
 import { useDeliveryAddressListQuery } from '@/features/delivery-addresses/model/hooks'
+import { useCreateOrderMutation } from '@/features/orders/model/hooks'
 import { getProblemDetails } from '@/shared/api/problem-details'
 import { formatPriceFromCents, multiplyPriceByQuantity } from '@/shared/lib/cart-pricing'
 import { useAuthStore } from '@/shared/stores/auth-store'
@@ -18,6 +19,7 @@ function getCustomizationSummary(names: readonly string[]) {
 }
 
 export function CartPage() {
+  const navigate = useNavigate()
   const items = useCartStore((state) => state.items)
   const totalItems = useCartStore((state) => state.totalItems())
   const subtotalCents = useCartStore((state) => state.subtotalCents())
@@ -29,8 +31,10 @@ export function CartPage() {
   const [statusMessage, setStatusMessage] = useState<string | null>(null)
   const [selectedAddressId, setSelectedAddressId] = useState<number | undefined>(undefined)
   const [checkoutError, setCheckoutError] = useState<string | null>(null)
+  const [orderSuccess, setOrderSuccess] = useState<string | null>(null)
   const checkoutPayload = toCheckoutPayload()
   const checkoutPreflight = useCheckoutPreflightMutation()
+  const createOrder = useCreateOrderMutation()
   const addressQuery = useDeliveryAddressListQuery()
   const addresses = addressQuery.data ?? []
 
@@ -45,6 +49,7 @@ export function CartPage() {
   const handleCheckout = async () => {
     setStatusMessage(null)
     setCheckoutError(null)
+    setOrderSuccess(null)
 
     if (items.length === 0) {
       setCheckoutError('Tu carrito está vacío. Volvé al catálogo para agregar productos.')
@@ -57,14 +62,34 @@ export function CartPage() {
     }
 
     try {
+      // step 1: preflight validation
       const summary = await checkoutPreflight.mutateAsync({
         ...checkoutPayload,
         delivery_address_id: effectiveAddressId,
       })
-      setStatusMessage(`Preflight validado. Subtotal confirmado: $${summary.subtotal}`)
+
+      // step 2: create order
+      const order = await createOrder.mutateAsync({
+        items: checkoutPayload.items.map((item) => ({
+          product_id: item.product_id,
+          quantity: item.quantity,
+          removed_ingredient_ids: item.removed_ingredient_ids,
+        })),
+        delivery_address_id: effectiveAddressId,
+      })
+
+      // step 3: clear cart and show success
+      clear()
+      setOrderSuccess(`Pedido ${order.order_number} creado con éxito. Subtotal: $${order.subtotal}`)
+      setStatusMessage(null)
+
+      // navigate to orders page after a short delay
+      setTimeout(() => {
+        navigate(routePaths.orders)
+      }, 2000)
     } catch (error) {
       const problem = getProblemDetails(error)
-      setCheckoutError(problem?.detail ?? 'No pudimos validar el checkout. Revisá tu carrito e intentá de nuevo.')
+      setCheckoutError(problem?.detail ?? 'No pudimos procesar tu pedido. Revisá tu carrito e intentá de nuevo.')
     }
   }
 
@@ -78,6 +103,12 @@ export function CartPage() {
       {statusMessage ? (
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900" role="status">
           {statusMessage}
+        </div>
+      ) : null}
+
+      {orderSuccess ? (
+        <div className="rounded-2xl border border-emerald-300 bg-emerald-100 px-4 py-3 text-sm font-medium text-emerald-900" role="status">
+          {orderSuccess}
         </div>
       ) : null}
 
@@ -190,11 +221,12 @@ export function CartPage() {
             </div>
 
             <button
-              className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800"
+              className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
               onClick={handleCheckout}
               type="button"
+              disabled={checkoutPreflight.isPending || createOrder.isPending}
             >
-              Continuar al checkout
+              {checkoutPreflight.isPending || createOrder.isPending ? 'Procesando pedido...' : 'Confirmar pedido'}
             </button>
 
             {checkoutError ? <p className="text-sm text-rose-700">{checkoutError}</p> : null}

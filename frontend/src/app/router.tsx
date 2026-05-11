@@ -25,6 +25,7 @@ import { HomePage } from '@/pages/home-page/ui/home-page'
 import { LoginPage } from '@/pages/login-page/ui/login-page'
 import { NotFoundPage } from '@/pages/not-found-page/ui/not-found-page'
 import { OrdersPage } from '@/pages/orders-page/ui/orders-page'
+import { OrderDetailPage } from '@/pages/order-detail-page/ui/order-detail-page'
 import { PublicProductDetailPage } from '@/pages/public-product-detail-page/ui/public-product-detail-page'
 import { RegisterPage } from '@/pages/register-page/ui/register-page'
 import { StockPage } from '@/pages/stock-page/ui/stock-page'
@@ -82,7 +83,8 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           <Route path={routePaths.adminIngredients} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminIngredientsPage /></ProtectedByRole>} />
           <Route path={routePaths.adminProducts} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminProductsPage /></ProtectedByRole>} />
           <Route path={routePaths.stock} element={<ProtectedByRole allowedRoles={['ADMIN', 'STOCK']}><StockPage /></ProtectedByRole>} />
-          <Route path={routePaths.orders} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS']}><OrdersPage /></ProtectedByRole>} />
+          <Route path={routePaths.orders} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS', 'CLIENT']}><OrdersPage /></ProtectedByRole>} />
+          <Route path={routePaths.orderDetail} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS', 'CLIENT']}><OrderDetailPage /></ProtectedByRole>} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />

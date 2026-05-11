@@ -11,6 +11,7 @@ export const routePaths = {
   adminProducts: '/admin/products',
   stock: '/stock',
   orders: '/orders',
+  orderDetail: '/orders/:orderId',
   accessDenied: '/access-denied',
 } as const
 
@@ -68,7 +69,7 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     to: routePaths.orders,
     label: 'Pedidos',
     description: 'Seguimiento y preparación de pedidos.',
-    allowedRoles: ['ADMIN', 'PEDIDOS'],
+    allowedRoles: ['ADMIN', 'PEDIDOS', 'CLIENT'],
     exact: true,
   },
 ] as const
