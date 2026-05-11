@@ -33,8 +33,8 @@ describe('ProductManagementPage', () => {
     await user.clear(screen.getByLabelText('Precio'))
     await user.type(screen.getByLabelText('Precio'), '10.50')
     await user.type(screen.getByLabelText('Stock cantidad'), '5')
-    await user.selectOptions(screen.getByLabelText('Categorías'), '1')
-    await user.selectOptions(screen.getByLabelText('Ingredientes'), '1')
+    await user.click(screen.getByRole('checkbox', { name: 'Bebidas' }))
+    await user.click(screen.getByRole('checkbox', { name: 'Azúcar' }))
     await user.click(screen.getByRole('button', { name: 'Crear producto' }))
 
     await waitFor(() => expect(productClient.create).toHaveBeenCalled())

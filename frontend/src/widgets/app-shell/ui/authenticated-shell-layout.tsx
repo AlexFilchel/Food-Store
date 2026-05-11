@@ -30,19 +30,19 @@ export function AuthenticatedShellLayout() {
 
           <div className="hidden items-center gap-3 md:flex">
             <Link
-              className="inline-flex rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              className="inline-flex rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
               to={routePaths.home}
             >
               Catálogo
             </Link>
             <UserSummary />
-            <LogoutButton className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" />
+            <LogoutButton className="rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" />
           </div>
 
           <button
             aria-controls="mobile-navigation"
             aria-expanded={sidebarOpen}
-            className="inline-flex rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 md:hidden"
+            className="inline-flex rounded-md border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 md:hidden"
             onClick={toggleSidebar}
             type="button"
           >
@@ -53,7 +53,7 @@ export function AuthenticatedShellLayout() {
 
       <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-8">
         <aside className="hidden lg:block">
-          <nav aria-label="Navegación principal" className="sticky top-24 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
+          <nav aria-label="Navegación principal" className="sticky top-24 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
             <NavigationList navigation={navigation} />
           </nav>
         </aside>
@@ -62,12 +62,12 @@ export function AuthenticatedShellLayout() {
           <div className="lg:hidden">
             <nav
               aria-label="Navegación móvil"
-              className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm"
+              className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm"
               id="mobile-navigation"
             >
               <UserSummary className="mb-4 flex md:hidden" />
               <NavigationList navigation={navigation} />
-              <LogoutButton className="mt-4 inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700" />
+              <LogoutButton className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700" />
             </nav>
           </div>
         ) : null}
@@ -92,10 +92,10 @@ function NavigationList({ navigation }: NavigationListProps) {
           <NavLink
             className={({ isActive }) =>
               cn(
-                'block rounded-2xl border px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-sky-300',
+                'block rounded-lg border px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-sky-300',
                 isActive
                   ? 'border-sky-200 bg-sky-50 text-sky-900'
-                  : 'border-transparent bg-slate-50 text-slate-700 hover:border-slate-200 hover:bg-white',
+                  : 'border-slate-200/70 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white',
               )
             }
             end={item.exact}
@@ -118,8 +118,8 @@ function UserSummary({ className }: { className?: string }) {
   }
 
   return (
-    <div className={cn('items-center gap-3 rounded-2xl bg-slate-100 px-4 py-2', className ?? 'flex')}>
-      <div className="flex size-10 items-center justify-center rounded-full bg-slate-900 text-sm font-semibold text-white">
+    <div className={cn('items-center gap-3 rounded-lg bg-slate-100 px-4 py-2', className ?? 'flex')}>
+      <div className="flex size-10 items-center justify-center rounded-lg bg-slate-900 text-sm font-semibold text-white">
         {user.first_name[0]}
         {user.last_name[0]}
       </div>

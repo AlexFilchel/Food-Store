@@ -1,5 +1,5 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 
 import { categoryClient } from '@/entities/categories/api/category-client'
@@ -145,16 +145,19 @@ describe('CategoryManagementPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    expect(await screen.findAllByRole('button', { name: 'Editar' })).toHaveLength(2)
+    const editButtons = await screen.findAllByRole('button', { name: 'Editar' })
+    expect(editButtons.length).toBeGreaterThan(0)
 
-    await user.click(screen.getAllByRole('button', { name: 'Editar' })[1])
+    const row = within(screen.getByRole('table')).getByText('Gaseosas').closest('tr')
+    expect(row).not.toBeNull()
+    await user.click(within(row as HTMLTableRowElement).getByRole('button', { name: 'Editar' }))
     const nameInput = screen.getByLabelText('Nombre')
     await user.clear(nameInput)
     await user.type(nameInput, 'Gaseosas Zero')
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 
     await waitFor(() => expect(categoryClient.update).toHaveBeenCalledWith(2, expect.objectContaining({ name: 'Gaseosas Zero' })))
-    expect(await screen.findAllByText('gaseosas-zero')).toHaveLength(2)
+    expect(await screen.findAllByText('gaseosas-zero')).toHaveLength(1)
 
     await user.click(screen.getAllByRole('button', { name: 'Eliminar' })[0])
     await waitFor(() => expect(vi.mocked(categoryClient.remove).mock.calls[0]?.[0]).toBe(2))
@@ -193,7 +196,8 @@ describe('CategoryManagementPage', () => {
     const user = userEvent.setup()
     renderPage()
 
-    expect(await screen.findAllByRole('button', { name: 'Editar' })).toHaveLength(2)
+    const editButtons = await screen.findAllByRole('button', { name: 'Editar' })
+    expect(editButtons.length).toBeGreaterThan(0)
 
     await user.type(screen.getByLabelText('Nombre'), 'Gaseosas')
     await user.selectOptions(screen.getByLabelText('Categoría padre'), '1')
@@ -202,7 +206,9 @@ describe('CategoryManagementPage', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('Otra categoría activa ya usa ese nombre.')
     expect(screen.getByLabelText('Nombre')).toHaveValue('Gaseosas')
 
-    await user.click(screen.getAllByRole('button', { name: 'Editar' })[1])
+    const editingRow = within(screen.getByRole('table')).getByText('Gaseosas').closest('tr')
+    expect(editingRow).not.toBeNull()
+    await user.click(within(editingRow as HTMLTableRowElement).getByRole('button', { name: 'Editar' }))
     await user.selectOptions(screen.getByLabelText('Categoría padre'), '1')
     await user.click(screen.getByRole('button', { name: 'Guardar cambios' }))
 

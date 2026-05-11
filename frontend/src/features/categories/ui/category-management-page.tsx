@@ -41,6 +41,7 @@ export function CategoryManagementPage() {
   const categories = listQuery.data?.items ?? []
   const tree = treeQuery.data ?? []
   const parentOptions = useMemo(() => buildParentOptions(tree), [tree])
+  const categoryById = useMemo(() => new Map(categories.map((c) => [c.id, c.name])), [categories])
 
   async function handleDelete(category: Category) {
     setDeleteError(null)
@@ -60,62 +61,51 @@ export function CategoryManagementPage() {
   }
 
   return (
-    <section className="space-y-6 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+    <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
         <div>
-          <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-sm font-semibold text-violet-900">ADMIN · Categorías</span>
-          <h2 className="mt-4 text-3xl font-semibold text-slate-950">Gestión de categorías</h2>
+          <h2 className="text-3xl font-semibold text-slate-950">Gestión de categorías</h2>
           <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600">
             Administrá la taxonomía del catálogo con validaciones de jerarquía, soft delete y consistencia entre lista y árbol.
           </p>
         </div>
 
-        <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">
-          <input
-            checked={includeInactive}
-            className="size-4 rounded border-slate-300"
-            onChange={(event) => setIncludeInactive(event.target.checked)}
-            type="checkbox"
-          />
-          Mostrar categorías inactivas
-        </label>
+        <div />
       </div>
 
       {deleteError ? (
-        <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+        <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
           {deleteError}
         </p>
       ) : null}
 
-      <div className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,420px)]">
-        <div className="space-y-6">
-          <CategorySummaryCard total={listQuery.data?.total ?? 0} treeRoots={tree.length} />
+      <CategorySummaryCard total={listQuery.data?.total ?? 0} treeRoots={tree.length} />
 
-          <div className="grid gap-6 lg:grid-cols-2">
-            <CategoryListPanel
-              categories={categories}
-              errorMessage={listQuery.isError ? getErrorMessage(listQuery.error, 'No pudimos cargar la lista de categorías.') : null}
-              isDeleting={deleteMutation.isPending}
-              isLoading={listQuery.isLoading}
-              onDelete={handleDelete}
-              onEdit={setEditingCategory}
-            />
-            <CategoryTreePanel
-              errorMessage={treeQuery.isError ? getErrorMessage(treeQuery.error, 'No pudimos cargar el árbol de categorías.') : null}
-              isLoading={treeQuery.isLoading}
-              tree={tree}
-            />
-          </div>
-        </div>
+      <CategoryFormCard
+        category={editingCategory}
+        parentOptions={parentOptions}
+        tree={tree}
+        onCancelEdit={() => setEditingCategory(null)}
+        onSaved={() => setEditingCategory(null)}
+      />
 
-        <CategoryFormCard
-          category={editingCategory}
-          parentOptions={parentOptions}
-          tree={tree}
-          onCancelEdit={() => setEditingCategory(null)}
-          onSaved={() => setEditingCategory(null)}
-        />
-      </div>
+      <CategoryListPanel
+        categories={categories}
+        categoryById={categoryById}
+        errorMessage={listQuery.isError ? getErrorMessage(listQuery.error, 'No pudimos cargar la lista de categorías.') : null}
+        includeInactive={includeInactive}
+        isDeleting={deleteMutation.isPending}
+        isLoading={listQuery.isLoading}
+        onDelete={handleDelete}
+        onEdit={setEditingCategory}
+        onToggleIncludeInactive={setIncludeInactive}
+      />
+
+      <CategoryTreePanel
+        errorMessage={treeQuery.isError ? getErrorMessage(treeQuery.error, 'No pudimos cargar el árbol de categorías.') : null}
+        isLoading={treeQuery.isLoading}
+        tree={tree}
+      />
     </section>
   )
 }
@@ -123,11 +113,11 @@ export function CategoryManagementPage() {
 function CategorySummaryCard({ total, treeRoots }: { total: number; treeRoots: number }) {
   return (
     <div className="grid gap-4 sm:grid-cols-2">
-      <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+      <article className="rounded-xl border border-slate-200 bg-slate-50 p-5">
         <p className="text-sm font-medium text-slate-500">Categorías visibles</p>
         <p className="mt-3 text-3xl font-semibold text-slate-950">{total}</p>
       </article>
-      <article className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
+      <article className="rounded-xl border border-slate-200 bg-slate-50 p-5">
         <p className="text-sm font-medium text-slate-500">Raíces del árbol</p>
         <p className="mt-3 text-3xl font-semibold text-slate-950">{treeRoots}</p>
       </article>
@@ -137,78 +127,79 @@ function CategorySummaryCard({ total, treeRoots }: { total: number; treeRoots: n
 
 interface CategoryListPanelProps {
   categories: Category[]
+  categoryById: Map<number, string>
   errorMessage: string | null
+  includeInactive: boolean
   isDeleting: boolean
   isLoading: boolean
   onDelete: (category: Category) => Promise<void>
   onEdit: (category: Category) => void
+  onToggleIncludeInactive: (value: boolean) => void
 }
 
-function CategoryListPanel({ categories, errorMessage, isDeleting, isLoading, onDelete, onEdit }: CategoryListPanelProps) {
+function CategoryListPanel({ categories, categoryById, errorMessage, includeInactive, isDeleting, isLoading, onDelete, onEdit, onToggleIncludeInactive }: CategoryListPanelProps) {
   return (
-    <article className="rounded-3xl border border-slate-200 p-5">
-      <h3 className="text-xl font-semibold text-slate-950">Lista administrativa</h3>
-      <p className="mt-2 text-sm text-slate-600">Vista plana para revisar estado, parent y acciones rápidas.</p>
+    <article className="rounded-lg border border-slate-200 p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <h3 className="text-xl font-semibold text-slate-950">Lista administrativa</h3>
+          <p className="mt-2 text-sm text-slate-600">Vista plana para revisar estado, parent y acciones rápidas.</p>
+        </div>
+        <label className="inline-flex items-center gap-3 self-start rounded-lg border border-slate-200 px-4 py-2.5 text-sm font-medium text-slate-700">
+          <input checked={includeInactive} className="size-4 rounded border-slate-300" onChange={(event) => onToggleIncludeInactive(event.target.checked)} type="checkbox" />
+          Mostrar categorías inactivas
+        </label>
+      </div>
 
       {isLoading ? <PanelMessage message="Cargando categorías..." /> : null}
       {errorMessage ? <PanelError message={errorMessage} /> : null}
       {!isLoading && !errorMessage && categories.length === 0 ? <PanelMessage message="Todavía no hay categorías cargadas." /> : null}
 
       {!isLoading && !errorMessage && categories.length > 0 ? (
-        <ul className="mt-5 space-y-3">
-          {categories.map((category) => (
-            <li className="rounded-2xl border border-slate-200 p-4" key={category.id}>
-              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div className="space-y-2">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <h4 className="max-w-[200px] break-words text-base font-semibold text-slate-950">{category.name}</h4>
-                    <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-700">{category.slug}</span>
-                    <span
-                      className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                        category.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-900'
-                      }`}
-                    >
-                      {category.is_active ? 'Activa' : 'Inactiva'}
-                    </span>
-                  </div>
-                  <p className="line-clamp-2 text-sm text-slate-600">{category.description || 'Sin descripción.'}</p>
-                  <dl className="grid gap-2 text-sm text-slate-500 sm:grid-cols-3">
-                    <div>
-                      <dt className="font-medium text-slate-700">Parent</dt>
-                      <dd>{category.parent_id ?? 'Raíz'}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-slate-700">Orden</dt>
-                      <dd>{category.sort_order}</dd>
-                    </div>
-                    <div>
-                      <dt className="font-medium text-slate-700">Actualizada</dt>
-                      <dd>{new Date(category.updated_at).toLocaleString('es-AR')}</dd>
-                    </div>
-                  </dl>
-                </div>
-
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    className="rounded-2xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
-                    onClick={() => onEdit(category)}
-                    type="button"
+        <div className="mt-4 h-[430px] overflow-auto rounded-lg border border-slate-200">
+          <table className="w-full table-fixed text-sm">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
+              <tr>
+                <th className="px-3 py-2 border-r border-slate-200/70 w-44">Nombre</th>
+                <th className="px-1 py-2 border-r border-slate-200/70 w-20">Estado</th>
+                <th className="px-2 py-2 border-r border-slate-200/70 w-28">Parent</th>
+                <th className="px-1 py-2 border-r border-slate-200/70 w-16">Orden</th>
+                <th className="px-1 py-2 border-r border-slate-200/70 w-36">Actualizada</th>
+                <th className="px-1 py-2 w-44">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {categories.map((category) => (
+                <tr className="border-t border-slate-200 align-top" key={category.id}>
+                  <td className="px-4 py-3 border-r border-slate-200/60">
+                    <p className="font-semibold text-slate-950">{category.name}</p>
+                    <p className="text-xs text-slate-500">{category.description || 'Sin descripción.'}</p>
+                  </td>
+                  <td
+                    className={`px-1 py-2 border-r border-slate-200/60 align-middle font-medium text-slate-950 text-center ${
+                      category.is_active ? 'bg-emerald-100/80' : 'bg-rose-200/80'
+                    }`}
                   >
-                    Editar
-                  </button>
-                  <button
-                    className="rounded-2xl border border-rose-200 px-4 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60"
-                    disabled={isDeleting}
-                    onClick={() => void onDelete(category)}
-                    type="button"
-                  >
-                    Eliminar
-                  </button>
-                </div>
-              </div>
-            </li>
-          ))}
-        </ul>
+                    {category.is_active ? 'Activa' : 'Inactiva'}
+                  </td>
+                  <td className="px-2 py-2 border-r border-slate-200/60 align-middle text-slate-700 text-center">{category.parent_id ? (categoryById.get(category.parent_id) ?? `#${category.parent_id}`) : 'Raíz'}</td>
+                  <td className="px-1 py-2 border-r border-slate-200/60 align-middle text-slate-700 text-center">{category.sort_order}</td>
+                  <td className="px-1 py-2 border-r border-slate-200/60 align-middle text-slate-700 text-center">{new Date(category.updated_at).toLocaleString('es-AR')}</td>
+                  <td className="px-1 py-2 align-middle">
+                    <div className="flex items-center justify-center gap-2">
+                      <button className="rounded-md border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" onClick={() => onEdit(category)} type="button">
+                        Editar
+                      </button>
+                      <button className="rounded-md border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60" disabled={isDeleting} onClick={() => void onDelete(category)} type="button">
+                        Eliminar
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       ) : null}
     </article>
   )
@@ -216,9 +207,9 @@ function CategoryListPanel({ categories, errorMessage, isDeleting, isLoading, on
 
 function CategoryTreePanel({ errorMessage, isLoading, tree }: { errorMessage: string | null; isLoading: boolean; tree: CategoryTreeNode[] }) {
   return (
-    <article className="rounded-3xl border border-slate-200 p-5">
+    <article className="rounded-xl border border-slate-200 p-5">
       <h3 className="text-xl font-semibold text-slate-950">Árbol jerárquico</h3>
-      <p className="mt-2 text-sm text-slate-600">La UI carga la estructura completa para evitar validaciones ciegas y mostrar dependencias activas.</p>
+      <p className="mt-2 text-sm text-slate-600">Vista de soporte para validar dependencias entre categorías.</p>
 
       {isLoading ? <PanelMessage message="Cargando árbol de categorías..." /> : null}
       {errorMessage ? <PanelError message={errorMessage} /> : null}
@@ -240,11 +231,11 @@ function CategoryTreeBranch({ node }: { node: CategoryTreeNode }) {
 
   return (
     <li>
-      <div className="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
         <div className="flex flex-wrap items-center gap-2">
           <span className="font-semibold text-slate-950">{node.name}</span>
-          <span className="rounded-full bg-white px-2 py-1 text-xs font-medium text-slate-600">{node.slug}</span>
-          {!node.is_active ? <span className="rounded-full bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900">Inactiva</span> : null}
+          <span className="rounded-md bg-white px-2 py-1 text-xs font-medium text-slate-600">{node.slug}</span>
+          {!node.is_active ? <span className="rounded-md bg-amber-100 px-2 py-1 text-xs font-medium text-amber-900">Inactiva</span> : null}
         </div>
       </div>
 
@@ -316,7 +307,7 @@ function CategoryFormCard({ category, onCancelEdit, onSaved, parentOptions, tree
   const isPending = createMutation.isPending || updateMutation.isPending
 
   return (
-    <article className="rounded-3xl border border-slate-200 p-5">
+    <article className="rounded-xl border border-slate-200 p-5">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h3 className="text-xl font-semibold text-slate-950">{category ? 'Editar categoría' : 'Crear categoría'}</h3>
@@ -326,34 +317,34 @@ function CategoryFormCard({ category, onCancelEdit, onSaved, parentOptions, tree
         </div>
 
         {category ? (
-          <button
-            className="rounded-2xl border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
-            onClick={onCancelEdit}
-            type="button"
-          >
+          <button className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700" onClick={onCancelEdit} type="button">
             Cancelar
           </button>
         ) : null}
       </div>
 
       <form className="mt-5 space-y-4" onSubmit={handleSubmit}>
-        <TextField
-          error={fieldErrors.name}
-          id="category-name"
-          label="Nombre"
-          onChange={(value) => setForm((current) => ({ ...current, name: value }))}
-          value={form.name}
-        />
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <TextField
+              error={fieldErrors.name}
+              id="category-name"
+              label="Nombre"
+              onChange={(value) => setForm((current) => ({ ...current, name: value }))}
+              value={form.name}
+            />
+          </div>
 
-        <TextAreaField
-          error={fieldErrors.description}
-          id="category-description"
-          label="Descripción"
-          onChange={(value) => setForm((current) => ({ ...current, description: value }))}
-          value={form.description}
-        />
+          <div className="md:col-span-2">
+            <TextAreaField
+              error={fieldErrors.description}
+              id="category-description"
+              label="Descripción"
+              onChange={(value) => setForm((current) => ({ ...current, description: value }))}
+              value={form.description}
+            />
+          </div>
 
-        <div className="grid gap-4 sm:grid-cols-2">
           <SelectField
             error={fieldErrors.parent_id}
             id="category-parent"
@@ -370,29 +361,25 @@ function CategoryFormCard({ category, onCancelEdit, onSaved, parentOptions, tree
             type="number"
             value={form.sortOrder}
           />
+
+          <label className="inline-flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700 md:col-span-2">
+            <input
+              checked={form.isActive}
+              className="size-4 rounded border-slate-300"
+              onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
+              type="checkbox"
+            />
+            Categoría activa
+          </label>
         </div>
 
-        <label className="inline-flex items-center gap-3 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-700">
-          <input
-            checked={form.isActive}
-            className="size-4 rounded border-slate-300"
-            onChange={(event) => setForm((current) => ({ ...current, isActive: event.target.checked }))}
-            type="checkbox"
-          />
-          Categoría activa
-        </label>
-
         {formError ? (
-          <p className="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+          <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
             {formError}
           </p>
         ) : null}
 
-        <button
-          className="inline-flex w-full items-center justify-center rounded-2xl bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60"
-          disabled={isPending}
-          type="submit"
-        >
+        <button className="inline-flex w-full items-center justify-center rounded-lg bg-slate-950 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-60" disabled={isPending} type="submit">
           {isPending ? 'Guardando...' : category ? 'Guardar cambios' : 'Crear categoría'}
         </button>
       </form>
@@ -401,12 +388,12 @@ function CategoryFormCard({ category, onCancelEdit, onSaved, parentOptions, tree
 }
 
 function PanelMessage({ message }: { message: string }) {
-  return <p className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{message}</p>
+  return <p className="mt-5 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600">{message}</p>
 }
 
 function PanelError({ message }: { message: string }) {
   return (
-    <p className="mt-5 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
+    <p className="mt-5 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700" role="alert">
       {message}
     </p>
   )
@@ -435,7 +422,7 @@ function TextField({
       <input
         aria-describedby={error ? `${id}-error` : undefined}
         aria-invalid={Boolean(error)}
-        className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
         id={id}
         onChange={(event) => onChange(event.target.value)}
         type={type}
@@ -471,7 +458,7 @@ function TextAreaField({
       <textarea
         aria-describedby={error ? `${id}-error` : undefined}
         aria-invalid={Boolean(error)}
-        className="min-h-28 w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+        className="min-h-28 w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
         id={id}
         onChange={(event) => onChange(event.target.value)}
         value={value}
@@ -508,7 +495,7 @@ function SelectField({
       <select
         aria-describedby={error ? `${id}-error` : undefined}
         aria-invalid={Boolean(error)}
-        className="w-full rounded-2xl border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
+        className="w-full rounded-lg border border-slate-300 px-4 py-3 text-sm outline-none transition focus:border-sky-500 focus:ring-2 focus:ring-sky-200"
         id={id}
         onChange={(event) => onChange(event.target.value)}
         value={value}

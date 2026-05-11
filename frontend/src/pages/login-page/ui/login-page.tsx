@@ -8,7 +8,18 @@ export function LoginPage() {
       alternateHref={routePaths.register}
       alternateLabel="Creá tu cuenta"
       alternateText="¿Todavía no tenés usuario?"
-      description="Entrá con tus credenciales para recuperar tu shell y tus permisos actuales."
+      description=""
+      footer={
+        <div className="rounded-lg border border-slate-200 bg-slate-50 px-4 py-3">
+          <p className="text-xs font-semibold uppercase tracking-wide text-slate-600">Credenciales admin</p>
+          <p className="mt-2 text-sm text-slate-800">
+            <span className="font-medium">Email:</span> admin@foodstore.local
+          </p>
+          <p className="text-sm text-slate-800">
+            <span className="font-medium">Contraseña:</span> Admin1234!
+          </p>
+        </div>
+      }
       title="Iniciar sesión"
     >
       <LoginForm />

@@ -22,24 +22,11 @@ export function AuthFormCard({
   title,
 }: AuthFormCardProps) {
   return (
-    <section className="min-h-screen bg-slate-950 px-4 py-10 text-slate-50">
-      <div className="mx-auto grid max-w-6xl gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="space-y-6">
-          <span className="inline-flex rounded-full border border-sky-400/40 bg-sky-400/10 px-3 py-1 text-sm font-medium text-sky-200">
-            Food Store Shell
-          </span>
-          <div className="space-y-4">
-            <h1 className="text-4xl font-semibold tracking-tight sm:text-5xl">Acceso seguro para cada rol</h1>
-            <p className="max-w-xl text-base leading-7 text-slate-300 sm:text-lg">
-              Entrá con tu cuenta y navegá solo las secciones que te corresponden. Cliente, stock, pedidos o administración: cada experiencia queda aislada desde el shell.
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-3xl border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-slate-950/30 sm:p-8">
+    <section className="flex min-h-screen items-center justify-center bg-slate-950 px-4 py-10 text-slate-50">
+      <div className="w-full max-w-xl rounded-3xl border border-white/10 bg-white p-6 text-slate-950 shadow-2xl shadow-slate-950/30 sm:p-8">
           <div className="space-y-2">
             <h2 className="text-2xl font-semibold">{title}</h2>
-            <p className="text-sm text-slate-600">{description}</p>
+            {description ? <p className="text-sm text-slate-600">{description}</p> : null}
           </div>
 
           <div className="mt-6">{children}</div>
@@ -53,7 +40,6 @@ export function AuthFormCard({
               </Link>
             </p>
           </div>
-        </div>
       </div>
     </section>
   )

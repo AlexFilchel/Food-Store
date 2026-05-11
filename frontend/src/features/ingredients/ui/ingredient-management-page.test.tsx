@@ -71,7 +71,7 @@ describe('IngredientManagementPage', () => {
     await screen.findByText('Gestión de ingredientes')
 
     await user.type(screen.getByLabelText('Nombre ingrediente'), 'Queso')
-    await user.selectOptions(screen.getByLabelText('Alérgenos'), '2')
+    await user.click(screen.getByLabelText('Lácteos'))
     await user.click(screen.getByRole('button', { name: 'Crear ingrediente' }))
 
     await waitFor(() => expect(ingredientClient.createIngredient).toHaveBeenCalledWith({ name: 'Queso', description: null, is_active: true, allergen_ids: [2] }))
@@ -93,8 +93,8 @@ describe('IngredientManagementPage', () => {
     await user.click(screen.getAllByRole('button', { name: 'Editar ingrediente' })[0])
     await user.clear(screen.getByLabelText('Nombre ingrediente'))
     await user.type(screen.getByLabelText('Nombre ingrediente'), 'Pan integral')
-    await user.deselectOptions(screen.getByLabelText('Alérgenos'), '1')
-    await user.selectOptions(screen.getByLabelText('Alérgenos'), '2')
+    await user.click(screen.getByLabelText('Gluten'))
+    await user.click(screen.getByLabelText('Lácteos'))
     await user.click(screen.getByRole('button', { name: 'Guardar ingrediente' }))
 
     await waitFor(() => expect(ingredientClient.updateIngredient).toHaveBeenCalledWith(1, {
