@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 
 import { routePaths } from '@/app/routes/route-config'
-import { usePaymentByOrderQuery } from '@/features/payments/model/hooks'
+import { usePaymentByExternalReferenceQuery } from '@/features/payments/model/hooks'
 
 type PaymentResult = 'success' | 'failure' | 'pending' | 'loading'
 
@@ -10,10 +10,10 @@ export function PaymentResultPage() {
   const [searchParams] = useSearchParams()
   const [result, setResult] = useState<PaymentResult>('loading')
 
-  const orderIdParam = searchParams.get('external_reference')
-  const orderId = orderIdParam ? Number(orderIdParam.replace('order-', '')) : undefined
+  const externalReference = searchParams.get('external_reference') ?? undefined
+  const orderId = externalReference ? Number(externalReference.replace('order-', '')) : undefined
 
-  const paymentQuery = usePaymentByOrderQuery(orderId)
+  const paymentQuery = usePaymentByExternalReferenceQuery(externalReference)
 
   useEffect(() => {
     if (paymentQuery.isLoading) {

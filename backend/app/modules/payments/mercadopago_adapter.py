@@ -133,6 +133,7 @@ class MockMercadoPagoAdapter(MercadoPagoPort):
     def __init__(self) -> None:
         self._preferences: dict[str, MercadoPagoPreferenceResult] = {}
         self._payments: dict[str, MercadoPagoPaymentStatus] = {}
+        self._payments_by_external_reference: dict[str, MercadoPagoPaymentStatus] = {}
 
     async def create_preference(
         self,
@@ -164,19 +165,18 @@ class MockMercadoPagoAdapter(MercadoPagoPort):
         )
 
     async def search_payment_by_external_reference(self, external_reference: str) -> MercadoPagoPaymentStatus:
-        return MercadoPagoPaymentStatus(
-            success=True,
-            mp_payment_id="mock-mp-payment-123",
-            status="approved",
-            status_detail="accredited",
-            external_reference=external_reference,
-        )
+        if external_reference in self._payments_by_external_reference:
+            return self._payments_by_external_reference[external_reference]
+        return MercadoPagoPaymentStatus(success=False, error="No payment found")
 
     def set_mock_payment(self, mp_payment_id: str, status: str, external_reference: str | None = None) -> None:
-        self._payments[mp_payment_id] = MercadoPagoPaymentStatus(
+        payment_status = MercadoPagoPaymentStatus(
             success=True,
             mp_payment_id=mp_payment_id,
             status=status,
             status_detail="accredited" if status == "approved" else "pending",
             external_reference=external_reference,
         )
+        self._payments[mp_payment_id] = payment_status
+        if external_reference is not None:
+            self._payments_by_external_reference[external_reference] = payment_status

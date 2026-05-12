@@ -6,6 +6,7 @@ import type { PaymentInitRequest } from '@/entities/payment/model/types'
 export const paymentQueryKeys = {
   all: ['payments'] as const,
   byOrder: (orderId: number) => [...paymentQueryKeys.all, 'by-order', orderId] as const,
+  byExternalReference: (externalReference: string) => [...paymentQueryKeys.all, 'by-external-reference', externalReference] as const,
   status: (paymentId: number) => [...paymentQueryKeys.all, 'status', paymentId] as const,
 }
 
@@ -35,6 +36,15 @@ export function usePaymentStatusQuery(paymentId: number | undefined) {
     queryKey: paymentQueryKeys.status(paymentId!),
     queryFn: () => paymentClient.getStatus(paymentId!),
     enabled: paymentId !== undefined,
+    retry: false,
+  })
+}
+
+export function usePaymentByExternalReferenceQuery(externalReference: string | undefined) {
+  return useQuery({
+    queryKey: paymentQueryKeys.byExternalReference(externalReference!),
+    queryFn: () => paymentClient.getByExternalReference(externalReference!),
+    enabled: externalReference !== undefined,
     retry: false,
   })
 }

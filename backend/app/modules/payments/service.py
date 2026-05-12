@@ -275,6 +275,8 @@ class PaymentService:
             if order is None or order.user_id != user_id:
                 raise payment_not_found()
 
+            await self._sync_pending_payment(uow, payment=payment)
+
             status = await uow.payment_statuses.get_by_id(payment.status_id)
             return PaymentStatusResponse.from_model(
                 payment,
@@ -299,25 +301,55 @@ class PaymentService:
             if payment is None:
                 raise payment_not_found()
 
-            # auto-sync if payment is still PENDING and has a MercadoPago payment ID
-            # this handles the case where the user redirected before the webhook arrived
-            pending_status = await uow.payment_statuses.get_by_code("PENDING")
-            if pending_status and payment.status_id == pending_status.id and payment.mp_payment_id:
-                gateway = self._get_gateway()
-                real_status = await gateway.get_payment_status(payment.mp_payment_id)
-                if real_status.success:
-                    await self._apply_payment_status(
-                        uow, payment=payment, mp_status=real_status.status, mp_payment_id=payment.mp_payment_id
-                    )
-                    await uow.session.flush()
+            return await self._build_payment_status_response(uow, payment=payment)
 
-            status = await uow.payment_statuses.get_by_id(payment.status_id)
-            return PaymentStatusResponse.from_model(
-                payment,
-                status_name=status.name if status else "UNKNOWN",
-                created_at=to_utc_iso(payment.created_at),
-                updated_at=to_utc_iso(payment.updated_at),
-            )
+    async def get_payment_by_external_reference(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        *,
+        external_reference: str,
+    ) -> PaymentStatusResponse:
+        async with uow:
+            payment = await uow.payments.get_by_external_reference(external_reference)
+            if payment is None:
+                raise payment_not_found()
+
+            return await self._build_payment_status_response(uow, payment=payment)
+
+    async def _build_payment_status_response(self, uow: SqlAlchemyUnitOfWork, *, payment: Payment) -> PaymentStatusResponse:
+        await self._sync_pending_payment(uow, payment=payment)
+
+        status = await uow.payment_statuses.get_by_id(payment.status_id)
+        return PaymentStatusResponse.from_model(
+            payment,
+            status_name=status.name if status else "UNKNOWN",
+            created_at=to_utc_iso(payment.created_at),
+            updated_at=to_utc_iso(payment.updated_at),
+        )
+
+    async def _sync_pending_payment(self, uow: SqlAlchemyUnitOfWork, *, payment: Payment) -> None:
+        pending_status = await uow.payment_statuses.get_by_code("PENDING")
+        if pending_status is None or payment.status_id != pending_status.id:
+            return
+
+        gateway = self._get_gateway()
+        real_status = None
+
+        if payment.mp_payment_id:
+            real_status = await gateway.get_payment_status(payment.mp_payment_id)
+        elif payment.mp_external_reference:
+            real_status = await gateway.search_payment_by_external_reference(payment.mp_external_reference)
+
+        if real_status is None or not real_status.success or real_status.mp_payment_id is None:
+            return
+
+        await self._apply_payment_status(
+            uow,
+            payment=payment,
+            mp_status=real_status.status,
+            mp_payment_id=real_status.mp_payment_id,
+        )
+        await uow.session.flush()
 
     async def process_webhook(
         self,

@@ -37,8 +37,10 @@ class Settings(BaseSettings):
         if not stripped:
             return []
         if stripped.startswith("[") and stripped.endswith("]"):
-            return list(json.loads(stripped))
-        return [item.strip() for item in stripped.split(",") if item.strip()]
+            origins = json.loads(stripped)
+        else:
+            origins = [item.strip() for item in stripped.split(",") if item.strip()]
+        return [origin.rstrip("/") for origin in origins if origin.rstrip("/")]
 
 
 @lru_cache

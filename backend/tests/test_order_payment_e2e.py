@@ -3,6 +3,8 @@
 import pytest
 
 from app.core.database import get_session_factory
+from app.modules.payments.gateway import MercadoPagoPaymentStatus, MercadoPagoPreferenceResult
+from app.modules.payments.service import payment_service
 
 
 async def register_user(client, *, email: str):
@@ -21,6 +23,34 @@ async def register_user(client, *, email: str):
 async def login_admin(client):
     response = await client.post('/api/v1/auth/login', json={'email': 'admin@test.local', 'password': 'Admin1234!'})
     return {'Authorization': f"Bearer {response.json()['access_token']}"}
+
+
+class RedirectFallbackGateway:
+    async def create_preference(self, *, external_reference: str, items: list[dict], back_urls: dict, notification_url: str):
+        return MercadoPagoPreferenceResult(
+            success=True,
+            preference_id=f'redirect-pref-{external_reference}',
+            init_point=f'https://www.mercadopago.com.ar/checkout/v1/redirect?pref_id=redirect-pref-{external_reference}',
+            sandbox_init_point=f'https://sandbox.mercadopago.com.ar/checkout/v1/redirect?pref_id=redirect-pref-{external_reference}',
+        )
+
+    async def get_payment_status(self, mp_payment_id: str):
+        return MercadoPagoPaymentStatus(
+            success=True,
+            mp_payment_id=mp_payment_id,
+            status='approved',
+            status_detail='accredited',
+            external_reference='order-1',
+        )
+
+    async def search_payment_by_external_reference(self, external_reference: str):
+        return MercadoPagoPaymentStatus(
+            success=True,
+            mp_payment_id=f'mp-{external_reference}',
+            status='approved',
+            status_detail='accredited',
+            external_reference=external_reference,
+        )
 
 
 async def create_product(client, headers, *, name: str, stock: int = 10, price: str = '20.00'):
@@ -114,6 +144,54 @@ async def test_full_checkout_to_order_to_payment_flow(client):
     by_order_response = await client.get(f'/api/v1/payments/by-order/{order_id}', headers=headers)
     assert by_order_response.status_code == 200
     assert by_order_response.json()['payment_id'] == payment_id
+
+
+@pytest.mark.asyncio
+async def test_payment_result_redirect_can_reconcile_without_webhook(client):
+    original_gateway = payment_service._gateway
+    payment_service._gateway = RedirectFallbackGateway()
+
+    try:
+        admin_headers = await login_admin(client)
+        product = await create_product(client, admin_headers, name='Napolitana', stock=5, price='30.00')
+
+        customer = await register_user(client, email='redirect-fallback@example.com')
+        headers = {'Authorization': f"Bearer {customer.json()['access_token']}"}
+        address = await client.post('/api/v1/customer/addresses', headers=headers, json=address_payload())
+        assert address.status_code == 201
+
+        order = await client.post(
+            '/api/v1/orders',
+            headers=headers,
+            json={
+                'items': [{'product_id': product['id'], 'quantity': 1, 'removed_ingredient_ids': []}],
+                'delivery_address_id': address.json()['id'],
+                'payment_method_code': 'MERCADOPAGO',
+            },
+        )
+        assert order.status_code == 201
+        order_id = order.json()['id']
+
+        payment_response = await client.post('/api/v1/payments/init', headers=headers, json={'order_id': order_id})
+        assert payment_response.status_code == 201
+        payment_data = payment_response.json()
+        assert payment_data['external_reference'] == f'order-{order_id}'
+
+        result_response = await client.get(f'/api/v1/payments/result/order-{order_id}')
+        assert result_response.status_code == 200
+        result_data = result_response.json()
+        assert result_data['status'] == 'Aprobado'
+        assert result_data['mp_payment_id'] == f'mp-order-{order_id}'
+
+        by_order_response = await client.get(f'/api/v1/payments/by-order/{order_id}', headers=headers)
+        assert by_order_response.status_code == 200
+        assert by_order_response.json()['status'] == 'Aprobado'
+
+        detail_response = await client.get(f'/api/v1/orders/{order_id}', headers=headers)
+        assert detail_response.status_code == 200
+        assert detail_response.json()['state'] == 'Confirmado'
+    finally:
+        payment_service._gateway = original_gateway
 
 
 @pytest.mark.asyncio

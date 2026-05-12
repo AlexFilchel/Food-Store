@@ -23,6 +23,15 @@ export const paymentClient = {
     return response.data
   },
 
+  getByExternalReference: async (externalReference: string) => {
+    const response = await httpClient.get<PaymentStatusResponse>(`/api/v1/payments/result/${externalReference}`, {
+      headers: {
+        'x-skip-global-error-feedback': 'true',
+      },
+    })
+    return response.data
+  },
+
   retry: async (paymentId: number) => {
     const response = await httpClient.post<PaymentRetryResponse>(`/api/v1/payments/${paymentId}/retry`)
     return response.data

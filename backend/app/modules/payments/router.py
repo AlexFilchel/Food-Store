@@ -47,6 +47,14 @@ async def get_payment_by_order(
     return await payment_service.get_payment_by_order(uow, user_id=current_user.id, order_id=order_id)
 
 
+@router.get("/result/{external_reference}", response_model=PaymentStatusResponse)
+async def get_payment_result_by_external_reference(
+    external_reference: str,
+    uow: Annotated[SqlAlchemyUnitOfWork, Depends(get_uow)],
+) -> PaymentStatusResponse:
+    return await payment_service.get_payment_by_external_reference(uow, external_reference=external_reference)
+
+
 @router.post("/{payment_id}/retry", response_model=PaymentRetryResponse)
 async def retry_payment(
     payment_id: int,
