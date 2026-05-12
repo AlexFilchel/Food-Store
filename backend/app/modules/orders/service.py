@@ -2,11 +2,14 @@ import uuid
 from datetime import UTC, datetime
 from decimal import Decimal
 
+from sqlalchemy import select
+
 from app.core.time import utc_now
 from app.core.uow import SqlAlchemyUnitOfWork
 from app.modules.orders.errors import (
     order_delivery_address_not_found,
     order_delivery_address_required,
+    order_forbidden_transition,
     order_empty_cart,
     order_insufficient_stock,
     order_invalid_customization,
@@ -15,15 +18,123 @@ from app.modules.orders.errors import (
     order_payment_method_not_found,
     order_product_not_found,
 )
-from app.modules.orders.model import Order, OrderHistory, OrderItem
+from app.modules.orders.fsm import ActorType, TransitionRequest, can_transition
+from app.modules.orders.model import Order, OrderHistory, OrderItem, OrderState
 from app.modules.orders.schemas import (
     OrderCreateRequest,
+    OrderDetailResponse,
+    OrderHistoryResponse,
+    OrderListPageResponse,
     OrderListResponse,
+    PaymentSummaryResponse,
     OrderResponse,
 )
 
 
 class OrderService:
+    async def _transition_order_in_uow(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        *,
+        order_id: int,
+        to_code: str,
+        actor_type: ActorType,
+        actor_user_id: int | None,
+        source: str,
+        reason_code: str | None,
+        note: str | None,
+        event_key: str | None,
+    ) -> OrderResponse:
+        order = await uow.orders.get_by_id_for_update(order_id=order_id)
+        if order is None:
+            raise order_not_found()
+
+        if actor_type == "customer" and actor_user_id != order.user_id:
+            raise order_forbidden_transition(actor_type="customer", from_state="UNKNOWN", to_state=to_code)
+
+        if event_key:
+            existing = await uow.order_history.get_history_by_event_key(event_key=event_key)
+            if existing:
+                items = await uow.order_items.list_by_order(order_id=order.id)
+                current_state = await uow.order_states.get_by_id(order.state_id)
+                payment_method = await uow.payment_methods.get_by_id(order.payment_method_id) if order.payment_method_id else None
+                return OrderResponse.from_model(
+                    order,
+                    items=items,
+                    state_name=current_state.name if current_state else "UNKNOWN",
+                    payment_method_name=payment_method.name if payment_method else None,
+                )
+
+        current_state = await uow.order_states.get_by_id(order.state_id)
+        if current_state is None:
+            raise RuntimeError("Current order state not found")
+        target_state = await uow.order_states.get_by_code(to_code)
+        if target_state is None:
+            raise RuntimeError(f"Target order state '{to_code}' not found")
+
+        can_transition(
+            TransitionRequest(
+                from_code=current_state.code,
+                to_code=target_state.code,
+                actor_type=actor_type,
+                is_owner=actor_user_id == order.user_id,
+                source=source,
+            )
+        )
+
+        order.state_id = target_state.id
+        if target_state.code == "CANCELADO":
+            await self._restore_stock(uow, order_id=order.id)
+
+        history = OrderHistory(
+            order_id=order.id,
+            from_state_id=current_state.id,
+            to_state_id=target_state.id,
+            changed_by_user_id=actor_user_id,
+            actor_type=actor_type,
+            source=source,
+            reason_code=reason_code,
+            note=note,
+            event_key=event_key,
+            created_at=utc_now(),
+        )
+        await uow.order_history.create(history)
+
+        items = await uow.order_items.list_by_order(order_id=order.id)
+        payment_method = await uow.payment_methods.get_by_id(order.payment_method_id) if order.payment_method_id else None
+        return OrderResponse.from_model(
+            order,
+            items=items,
+            state_name=target_state.name,
+            payment_method_name=payment_method.name if payment_method else None,
+        )
+
+    async def transition_order(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        *,
+        order_id: int,
+        to_code: str,
+        actor_type: ActorType,
+        actor_user_id: int | None,
+        source: str,
+        reason_code: str | None,
+        note: str | None,
+        event_key: str | None,
+    ) -> OrderResponse:
+        async with uow:
+            return await self._transition_order_in_uow(
+                uow,
+                order_id=order_id,
+                to_code=to_code,
+                actor_type=actor_type,
+                actor_user_id=actor_user_id,
+                source=source,
+                reason_code=reason_code,
+                note=note,
+                event_key=event_key,
+            )
+
     async def create_order(
         self,
         uow: SqlAlchemyUnitOfWork,
@@ -137,15 +248,27 @@ class OrderService:
                 )
                 await uow.order_items.create(item)
 
-            # create initial history entry
-            now = utc_now()
+            # create initial history entry via FSM policy
+            can_transition(
+                TransitionRequest(
+                    from_code=None,
+                    to_code="PENDIENTE",
+                    actor_type="customer",
+                    is_owner=True,
+                    source="api",
+                )
+            )
             history = OrderHistory(
                 order_id=order.id,
                 from_state_id=None,
                 to_state_id=pending_state.id,
                 changed_by_user_id=user_id,
+                actor_type="customer",
+                source="api",
+                reason_code="order_created",
                 note="Pedido creado",
-                created_at=now,
+                event_key=f"order:{order.id}:created",
+                created_at=utc_now(),
             )
             await uow.order_history.create(history)
 
@@ -165,7 +288,7 @@ class OrderService:
         *,
         user_id: int,
         order_id: int,
-    ) -> OrderResponse:
+    ) -> OrderDetailResponse:
         async with uow:
             order = await uow.orders.get_by_id_for_user(order_id=order_id, user_id=user_id)
             if order is None:
@@ -177,11 +300,37 @@ class OrderService:
             if order.payment_method_id:
                 payment_method = await uow.payment_methods.get_by_id(order.payment_method_id)
 
-            return OrderResponse.from_model(
+            base_response = OrderResponse.from_model(
                 order,
                 items=items,
                 state_name=state.name if state else "UNKNOWN",
                 payment_method_name=payment_method.name if payment_method else None,
+            )
+
+            state_result = await uow.session.execute(select(OrderState))
+            state_entries = list(state_result.scalars().all())
+            state_map = {entry.id: entry.name for entry in state_entries}
+            history_rows = await uow.order_history.list_by_order(order_id=order.id)
+
+            latest_payment = await uow.payments.get_by_order_id(order.id)
+            payment_summary = None
+            if latest_payment is not None:
+                payment_status = await uow.payment_statuses.get_by_id(latest_payment.status_id)
+                status_code = (payment_status.code if payment_status else "").upper()
+                retry_allowed = status_code in {"PENDING", "REJECTED", "FAILED"} and (state.code if state else "") == "PENDIENTE"
+                payment_summary = PaymentSummaryResponse(
+                    payment_id=latest_payment.id,
+                    status=payment_status.name if payment_status else "UNKNOWN",
+                    amount=f"{latest_payment.amount:.2f}",
+                    attempts=latest_payment.attempts,
+                    failure_reason=latest_payment.failure_reason,
+                    retry_allowed=retry_allowed,
+                )
+
+            return OrderDetailResponse(
+                **base_response.model_dump(),
+                payment=payment_summary,
+                history=[OrderHistoryResponse.from_model(row, state_map=state_map) for row in history_rows],
             )
 
     async def list_orders(
@@ -189,9 +338,13 @@ class OrderService:
         uow: SqlAlchemyUnitOfWork,
         *,
         user_id: int,
-    ) -> list[OrderListResponse]:
+        state_code: str | None,
+        skip: int,
+        limit: int,
+    ) -> OrderListPageResponse:
         async with uow:
-            orders = await uow.orders.list_by_user(user_id=user_id)
+            orders = await uow.orders.list_by_user_paginated(user_id=user_id, state_code=state_code, skip=skip, limit=limit)
+            total = await uow.orders.count_by_user(user_id=user_id, state_code=state_code)
             result: list[OrderListResponse] = []
             for order in orders:
                 state = await uow.order_states.get_by_id(order.state_id)
@@ -203,7 +356,7 @@ class OrderService:
                         item_count=len(items),
                     )
                 )
-            return result
+            return OrderListPageResponse(items=result, total=total, skip=skip, limit=limit)
 
     async def _resolve_address(self, uow: SqlAlchemyUnitOfWork, *, user_id: int, delivery_address_id: int | None):
         if delivery_address_id is not None:
@@ -222,6 +375,17 @@ class OrderService:
         timestamp = datetime.now(UTC).strftime("%Y%m%d%H%M%S")
         short_uuid = uuid.uuid4().hex[:6].upper()
         return f"ORD-{timestamp}-{short_uuid}"
+
+    async def _restore_stock(self, uow: SqlAlchemyUnitOfWork, *, order_id: int) -> None:
+        items = await uow.order_items.list_by_order(order_id=order_id)
+        product_ids = sorted({item.product_id for item in items})
+        item_quantity_map: dict[int, int] = {}
+        for item in items:
+            item_quantity_map[item.product_id] = item_quantity_map.get(item.product_id, 0) + item.quantity
+        products = await uow.products.list_by_ids_for_update(product_ids)
+        for product in products:
+            product.stock_quantity += item_quantity_map[product.id]
+        await uow.session.flush()
 
 
 order_service = OrderService()

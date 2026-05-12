@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { routePaths } from '@/app/routes/route-config'
@@ -23,8 +24,15 @@ function getStateBadgeColor(state: string) {
 }
 
 export function OrdersPage() {
-  const ordersQuery = useOrderListQuery()
-  const orders = ordersQuery.data ?? []
+  const [stateCode, setStateCode] = useState<string>('')
+  const [page, setPage] = useState(1)
+  const limit = 10
+  const skip = (page - 1) * limit
+
+  const ordersQuery = useOrderListQuery({ state_code: stateCode || undefined, skip, limit })
+  const orders = ordersQuery.data?.items ?? []
+  const total = ordersQuery.data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / limit))
 
   return (
     <section className="space-y-6">
@@ -34,7 +42,33 @@ export function OrdersPage() {
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
           Acá vas a ver el historial y estado de todos tus pedidos.
         </p>
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          <label className="text-sm text-slate-700" htmlFor="state-filter">Estado</label>
+          <select
+            id="state-filter"
+            value={stateCode}
+            onChange={(event) => {
+              setStateCode(event.target.value)
+              setPage(1)
+            }}
+            className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          >
+            <option value="">Todos</option>
+            <option value="PENDIENTE">Pendiente</option>
+            <option value="CONFIRMADO">Confirmado</option>
+            <option value="EN_PREPARACION">En preparación</option>
+            <option value="EN_CAMINO">En camino</option>
+            <option value="ENTREGADO">Entregado</option>
+            <option value="CANCELADO">Cancelado</option>
+          </select>
+        </div>
       </header>
+
+      {ordersQuery.isError ? (
+        <div className="rounded-3xl border border-dashed border-rose-300 bg-white p-8 text-center">
+          <p className="text-rose-700">No pudimos cargar tus pedidos. Probá de nuevo en un momento.</p>
+        </div>
+      ) : null}
 
       {ordersQuery.isLoading ? (
         <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
@@ -94,6 +128,33 @@ export function OrdersPage() {
           ))}
         </div>
       )}
+
+      {orders.length > 0 ? (
+        <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+          <p>
+            Mostrando {skip + 1} - {Math.min(skip + limit, total)} de {total}
+          </p>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-50"
+              disabled={page <= 1}
+              onClick={() => setPage((current) => Math.max(1, current - 1))}
+            >
+              Anterior
+            </button>
+            <span>Página {page} / {totalPages}</span>
+            <button
+              type="button"
+              className="rounded-lg border border-slate-300 px-3 py-1 disabled:opacity-50"
+              disabled={page >= totalPages}
+              onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            >
+              Siguiente
+            </button>
+          </div>
+        </div>
+      ) : null}
     </section>
   )
 }

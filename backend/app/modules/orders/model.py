@@ -75,9 +75,14 @@ class OrderHistory(SQLModel, table=True):
     from_state_id: int | None = Field(default=None, sa_column=Column(ForeignKey("order_states.id", ondelete="RESTRICT"), nullable=True))
     to_state_id: int = Field(sa_column=Column(ForeignKey("order_states.id", ondelete="RESTRICT"), nullable=False))
     changed_by_user_id: int | None = Field(default=None, sa_column=Column(ForeignKey("users.id", ondelete="SET NULL"), nullable=True))
+    actor_type: str | None = Field(default=None, sa_column=Column(String(20), nullable=True))
+    source: str | None = Field(default=None, sa_column=Column(String(40), nullable=True))
+    reason_code: str | None = Field(default=None, sa_column=Column(String(80), nullable=True))
     note: str | None = Field(default=None, sa_column=Column(Text, nullable=True))
+    event_key: str | None = Field(default=None, sa_column=Column(String(255), nullable=True))
     created_at: datetime = Field(default_factory=utc_now, sa_column=Column(DateTime(timezone=True), nullable=False))
 
     __table_args__ = (
         Index("ix_order_history_order_created", "order_id", "created_at"),
+        Index("ux_order_history_event_key", "event_key", unique=True),
     )

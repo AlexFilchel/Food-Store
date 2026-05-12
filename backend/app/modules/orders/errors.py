@@ -94,3 +94,43 @@ def order_payment_method_not_found() -> AppError:
         detail="The selected payment method does not exist.",
         type_path="order-payment-method-not-found",
     )
+
+
+def order_invalid_transition(*, from_state: str | None, to_state: str) -> AppError:
+    return AppError(
+        status_code=HTTPStatus.CONFLICT,
+        code="ORDER_INVALID_TRANSITION",
+        title="Invalid Transition",
+        detail=f"Transition {from_state or 'NULL'} -> {to_state} is not allowed.",
+        type_path="order-invalid-transition",
+    )
+
+
+def order_forbidden_transition(*, actor_type: str, from_state: str | None, to_state: str) -> AppError:
+    return AppError(
+        status_code=HTTPStatus.FORBIDDEN,
+        code="ORDER_FORBIDDEN_TRANSITION",
+        title="Forbidden Transition",
+        detail=f"Actor '{actor_type}' cannot transition {from_state or 'NULL'} -> {to_state}.",
+        type_path="order-forbidden-transition",
+    )
+
+
+def order_terminal_state(*, current_state: str) -> AppError:
+    return AppError(
+        status_code=HTTPStatus.CONFLICT,
+        code="ORDER_TERMINAL_STATE",
+        title="Terminal State",
+        detail=f"Order is in terminal state {current_state} and cannot transition.",
+        type_path="order-terminal-state",
+    )
+
+
+def order_duplicate_event(*, event_key: str) -> AppError:
+    return AppError(
+        status_code=HTTPStatus.CONFLICT,
+        code="ORDER_DUPLICATE_EVENT",
+        title="Duplicate Transition Event",
+        detail=f"Transition event '{event_key}' was already applied.",
+        type_path="order-duplicate-event",
+    )

@@ -9,6 +9,8 @@ import { useAuthStore } from '@/shared/stores/auth-store'
 import { useCartStore } from '@/shared/stores/cart-store'
 
 const preflightMock = vi.fn()
+const createOrderMock = vi.fn()
+const initPaymentMock = vi.fn()
 
 vi.mock('@/features/checkout/model/hooks', () => ({
   useCheckoutPreflightMutation: () => ({
@@ -39,6 +41,20 @@ vi.mock('@/features/delivery-addresses/model/hooks', () => ({
   }),
 }))
 
+vi.mock('@/features/orders/model/hooks', () => ({
+  useCreateOrderMutation: () => ({
+    mutateAsync: createOrderMock,
+    isPending: false,
+  }),
+}))
+
+vi.mock('@/features/payments/model/hooks', () => ({
+  useInitPaymentMutation: () => ({
+    mutateAsync: initPaymentMock,
+    isPending: false,
+  }),
+}))
+
 function renderCartRoute() {
   return render(
     <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
@@ -53,6 +69,8 @@ describe('CartPage', () => {
     useCartStore.getState().clear()
     useAuthStore.getState().clear()
     preflightMock.mockReset()
+    createOrderMock.mockReset()
+    initPaymentMock.mockReset()
   })
 
   it('renders an empty cart state with a path back to the catalog', async () => {
@@ -84,9 +102,11 @@ describe('CartPage', () => {
     expect(screen.getByLabelText('Cantidad de Burger Pro')).toHaveValue('3')
     expect(screen.getByText('$66.00')).toBeInTheDocument()
 
-    await user.click(screen.getByRole('button', { name: 'Continuar al checkout' }))
+    await user.click(screen.getByRole('button', { name: 'Confirmar pedido' }))
     expect(screen.getByRole('status')).toHaveTextContent('Necesitás iniciar sesión para continuar al checkout.')
     expect(preflightMock).not.toHaveBeenCalled()
+    expect(createOrderMock).not.toHaveBeenCalled()
+    expect(initPaymentMock).not.toHaveBeenCalled()
 
     await act(async () => {
       useCartStore.getState().addItem({
@@ -106,7 +126,7 @@ describe('CartPage', () => {
 
   })
 
-  it('calls checkout preflight for authenticated users with mapped payload and default address', async () => {
+  it('creates the order, initializes payment and confirms redirect feedback for authenticated users', async () => {
     useCartStore.getState().addItem({
       productId: 5,
       slug: 'burger-pro',
@@ -117,24 +137,43 @@ describe('CartPage', () => {
     })
     useAuthStore.setState({ accessToken: 'token', refreshToken: 'refresh', user: null })
     preflightMock.mockResolvedValue({ subtotal: '44.00' })
+    createOrderMock.mockResolvedValue({ id: 99, order_number: 'ORD-99' })
+    initPaymentMock.mockResolvedValue({
+      payment_id: 123,
+      preference_id: 'pref-123',
+      init_point: 'https://www.mercadopago.com/init',
+      sandbox_init_point: 'https://sandbox.mercadopago.com/init',
+      external_reference: 'order-99',
+    })
+    const redirectTimerSpy = vi.spyOn(window, 'setTimeout')
 
     renderCartRoute()
     const user = userEvent.setup()
-    await user.click(await screen.findByRole('button', { name: 'Continuar al checkout' }))
+    await user.click(await screen.findByRole('button', { name: 'Confirmar pedido' }))
 
     expect(preflightMock).toHaveBeenCalledWith({
       items: [{ product_id: 5, quantity: 2, removed_ingredient_ids: [3] }],
       delivery_address_id: 10,
     })
-    expect(await screen.findByRole('status')).toHaveTextContent('Preflight validado. Subtotal confirmado: $44.00')
-    expect(useCartStore.getState().items).toHaveLength(1)
+    expect(createOrderMock).toHaveBeenCalledWith({
+      items: [{ product_id: 5, quantity: 2, removed_ingredient_ids: [3] }],
+      delivery_address_id: 10,
+      payment_method_code: 'MERCADOPAGO',
+    })
+    expect(initPaymentMock).toHaveBeenCalledWith({ order_id: 99 })
+    expect(await screen.findByRole('status')).toHaveTextContent('Pedido ORD-99 creado. Redirigiendo a MercadoPago...')
+    expect(useCartStore.getState().items).toHaveLength(0)
+    expect(redirectTimerSpy).toHaveBeenCalledWith(expect.any(Function), 1500)
+    redirectTimerSpy.mockRestore()
   })
 
   it('does not call preflight when cart is empty', async () => {
     useAuthStore.setState({ accessToken: 'token', refreshToken: 'refresh', user: null })
     renderCartRoute()
 
-    expect(screen.queryByRole('button', { name: 'Continuar al checkout' })).not.toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: 'Confirmar pedido' })).not.toBeInTheDocument()
     expect(preflightMock).not.toHaveBeenCalled()
+    expect(createOrderMock).not.toHaveBeenCalled()
+    expect(initPaymentMock).not.toHaveBeenCalled()
   })
 })

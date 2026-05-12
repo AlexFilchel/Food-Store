@@ -4,16 +4,15 @@ import { Link, useSearchParams } from 'react-router-dom'
 import { routePaths } from '@/app/routes/route-config'
 import { usePaymentByExternalReferenceQuery } from '@/features/payments/model/hooks'
 
-type PaymentResult = 'success' | 'failure' | 'pending' | 'loading'
+type PaymentResult = 'success' | 'failure' | 'pending' | 'unknown' | 'loading'
 
 export function PaymentResultPage() {
   const [searchParams] = useSearchParams()
   const [result, setResult] = useState<PaymentResult>('loading')
 
   const externalReference = searchParams.get('external_reference') ?? undefined
-  const orderId = externalReference ? Number(externalReference.replace('order-', '')) : undefined
-
   const paymentQuery = usePaymentByExternalReferenceQuery(externalReference)
+  const orderId = paymentQuery.data?.order_id ?? (externalReference ? Number(externalReference.replace('order-', '')) : undefined)
 
   useEffect(() => {
     if (paymentQuery.isLoading) {
@@ -22,7 +21,7 @@ export function PaymentResultPage() {
     }
 
     if (paymentQuery.isError || !paymentQuery.data) {
-      setResult('pending')
+      setResult('unknown')
       return
     }
 
@@ -61,7 +60,7 @@ export function PaymentResultPage() {
         ) : null}
 
         <div className="flex flex-wrap items-center justify-center gap-3">
-          {result === 'failure' && orderId ? (
+          {result === 'failure' && orderId && paymentQuery.data?.retry_allowed ? (
             <Link
               className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
               to={`${routePaths.orders}/${orderId}`}
@@ -73,9 +72,9 @@ export function PaymentResultPage() {
           {result === 'success' ? (
             <Link
               className="inline-flex rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800"
-              to={routePaths.orders}
+              to={orderId ? `${routePaths.orders}/${orderId}` : routePaths.orders}
             >
-              Ver mis pedidos
+              Ver detalle del pedido
             </Link>
           ) : null}
 
@@ -115,5 +114,11 @@ const resultConfig: Record<PaymentResult, { icon: string; iconBg: string; title:
     iconBg: 'bg-amber-100',
     title: 'Pago pendiente',
     description: 'Tu pago está siendo procesado. Te avisemos cuando se confirme.',
+  },
+  unknown: {
+    icon: '❔',
+    iconBg: 'bg-slate-100',
+    title: 'No pudimos verificar el pago',
+    description: 'No encontramos un resultado válido todavía. Podés revisar tu pedido más tarde.',
   },
 }

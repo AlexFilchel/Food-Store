@@ -6,7 +6,7 @@ import structlog
 from app.core.config import Settings, get_settings
 from app.core.time import to_utc_iso, utc_now
 from app.core.uow import SqlAlchemyUnitOfWork
-from app.modules.orders.model import OrderHistory
+from app.modules.orders.service import order_service
 from app.modules.payments.errors import (
     payment_already_exists,
     payment_not_found,
@@ -193,6 +193,10 @@ class PaymentService:
             if order.user_id != user_id:
                 raise payment_order_not_owned()
 
+            pending_order_state = await uow.order_states.get_by_code("PENDIENTE")
+            if pending_order_state is None or order.state_id != pending_order_state.id:
+                raise payment_order_not_pending()
+
             # allow retry for FAILED, REJECTED, or PENDING
             failed_status = await uow.payment_statuses.get_by_code("FAILED")
             rejected_status = await uow.payment_statuses.get_by_code("REJECTED")
@@ -278,11 +282,15 @@ class PaymentService:
             await self._sync_pending_payment(uow, payment=payment)
 
             status = await uow.payment_statuses.get_by_id(payment.status_id)
+            order_state = await uow.order_states.get_by_id(order.state_id)
+            status_code = (status.code if status else "").upper()
+            retry_allowed = status_code in {"PENDING", "REJECTED", "FAILED"} and (order_state.code if order_state else "") == "PENDIENTE"
             return PaymentStatusResponse.from_model(
                 payment,
                 status_name=status.name if status else "UNKNOWN",
                 created_at=to_utc_iso(payment.created_at),
                 updated_at=to_utc_iso(payment.updated_at),
+                retry_allowed=retry_allowed,
             )
 
     async def get_payment_by_order(
@@ -307,11 +315,16 @@ class PaymentService:
         self,
         uow: SqlAlchemyUnitOfWork,
         *,
+        user_id: int,
         external_reference: str,
     ) -> PaymentStatusResponse:
         async with uow:
             payment = await uow.payments.get_by_external_reference(external_reference)
             if payment is None:
+                raise payment_not_found()
+
+            order = await uow.orders.get_by_id(payment.order_id)
+            if order is None or order.user_id != user_id:
                 raise payment_not_found()
 
             return await self._build_payment_status_response(uow, payment=payment)
@@ -320,11 +333,16 @@ class PaymentService:
         await self._sync_pending_payment(uow, payment=payment)
 
         status = await uow.payment_statuses.get_by_id(payment.status_id)
+        order = await uow.orders.get_by_id(payment.order_id)
+        order_state = await uow.order_states.get_by_id(order.state_id) if order else None
+        status_code = (status.code if status else "").upper()
+        retry_allowed = status_code in {"PENDING", "REJECTED", "FAILED"} and (order_state.code if order_state else "") == "PENDIENTE"
         return PaymentStatusResponse.from_model(
             payment,
             status_name=status.name if status else "UNKNOWN",
             created_at=to_utc_iso(payment.created_at),
             updated_at=to_utc_iso(payment.updated_at),
+            retry_allowed=retry_allowed,
         )
 
     async def _sync_pending_payment(self, uow: SqlAlchemyUnitOfWork, *, payment: Payment) -> None:
@@ -479,28 +497,43 @@ class PaymentService:
         old_status_id = payment.status_id
         payment.status_id = new_status.id
 
-        if local_status_code in ("REJECTED", "CANCELLED"):
+        if local_status_code == "REJECTED":
             payment.failure_reason = f"MercadoPago status: {mp_status}"
 
-        if local_status_code == "APPROVED":
-            order = await uow.orders.get_by_id(payment.order_id)
-            if order:
-                confirmed_state = await uow.order_states.get_by_code("CONFIRMADO")
-                if confirmed_state and order.state_id != confirmed_state.id:
-                    old_state_id = order.state_id
-                    order.state_id = confirmed_state.id
-                    await uow.session.flush()
+        if local_status_code in ("CANCELLED", "FAILED"):
+            payment.failure_reason = f"MercadoPago status: {mp_status}"
 
-                    history = OrderHistory(
-                        order_id=order.id,
-                        from_state_id=old_state_id,
-                        to_state_id=confirmed_state.id,
-                        changed_by_user_id=None,
-                        note=f"Pago aprobado (MP payment: {mp_payment_id})",
-                        created_at=utc_now(),
-                    )
-                    await uow.order_history.create(history)
-                    logger.info("order.confirmed", order_id=order.id, payment_id=payment.id)
+        try:
+            if local_status_code == "APPROVED":
+                await order_service._transition_order_in_uow(
+                    uow,
+                    order_id=payment.order_id,
+                    to_code="CONFIRMADO",
+                    actor_type="system",
+                    actor_user_id=None,
+                    source="payment",
+                    reason_code="payment_approved",
+                    note=f"Pago aprobado (MP payment: {mp_payment_id})",
+                    event_key=f"mp:{mp_payment_id}:approved",
+                )
+
+            if local_status_code == "CANCELLED" or (mp_status or "").lower() == "expired":
+                await order_service._transition_order_in_uow(
+                    uow,
+                    order_id=payment.order_id,
+                    to_code="CANCELADO",
+                    actor_type="system",
+                    actor_user_id=None,
+                    source="payment",
+                    reason_code="payment_cancelled_or_expired",
+                    note=f"Pago cancelado/expirado (MP payment: {mp_payment_id})",
+                    event_key=f"mp:{mp_payment_id}:cancelled",
+                )
+        except Exception as exc:
+            if getattr(exc, "code", "") in {"ORDER_INVALID_TRANSITION", "ORDER_TERMINAL_STATE"}:
+                logger.info("order.transition_ignored", payment_id=payment.id, code=getattr(exc, "code", ""))
+            else:
+                raise
 
 
 def get_payment_service() -> PaymentService:

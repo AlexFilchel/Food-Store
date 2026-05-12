@@ -3,7 +3,7 @@ import { Link, useParams } from 'react-router-dom'
 
 import { routePaths } from '@/app/routes/route-config'
 import { useOrderQuery } from '@/features/orders/model/hooks'
-import { usePaymentByOrderQuery, useRetryPaymentMutation } from '@/features/payments/model/hooks'
+import { useRetryPaymentMutation } from '@/features/payments/model/hooks'
 import { getProblemDetails } from '@/shared/api/problem-details'
 
 function getStateBadgeColor(state: string) {
@@ -51,8 +51,7 @@ export function OrderDetailPage() {
   const orderQuery = useOrderQuery(orderIdNum)
   const order = orderQuery.data
 
-  const paymentQuery = usePaymentByOrderQuery(orderIdNum)
-  const payment = paymentQuery.data
+  const payment = order?.payment
 
   const retryPayment = useRetryPaymentMutation()
   const [retryError, setRetryError] = useState<string | null>(null)
@@ -93,7 +92,7 @@ export function OrderDetailPage() {
     )
   }
 
-  const canRetry = payment && ['Rechazado', 'Cancelado', 'Fallido'].includes(payment.status)
+  const canRetry = Boolean(payment?.retry_allowed)
 
   return (
     <section className="space-y-6">
@@ -219,6 +218,25 @@ export function OrderDetailPage() {
             {order.delivery_address.reference ? (
               <p className="mt-1 text-xs text-slate-500">Ref: {order.delivery_address.reference}</p>
             ) : null}
+          </div>
+
+          <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+            <p className="font-medium text-slate-900">Historial</p>
+            {order.history.length === 0 ? (
+              <p className="mt-2 text-xs text-slate-500">Todavía no hay eventos visibles.</p>
+            ) : (
+              <ul className="mt-2 space-y-2">
+                {order.history.map((entry) => (
+                  <li key={entry.id} className="rounded-lg bg-white px-3 py-2">
+                    <p className="text-xs font-medium text-slate-900">{entry.to_state}</p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(entry.created_at).toLocaleString('es-AR')}
+                    </p>
+                    {entry.note ? <p className="text-xs text-slate-600">{entry.note}</p> : null}
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </aside>
       </div>

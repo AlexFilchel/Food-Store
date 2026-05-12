@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.repository import BaseRepository
@@ -36,6 +36,35 @@ class OrderRepository(BaseRepository[Order]):
         )
         return list(result.scalars().all())
 
+    async def list_by_user_paginated(
+        self,
+        *,
+        user_id: int,
+        state_code: str | None,
+        skip: int,
+        limit: int,
+    ) -> list[Order]:
+        query = select(Order).where(Order.user_id == user_id)
+        if state_code:
+            query = query.join(OrderState, OrderState.id == Order.state_id).where(OrderState.code == state_code)
+        result = await self.session.execute(
+            query.order_by(Order.created_at.desc(), Order.id.desc()).offset(skip).limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def count_by_user(self, *, user_id: int, state_code: str | None) -> int:
+        query = select(func.count(Order.id)).where(Order.user_id == user_id)
+        if state_code:
+            query = query.join(OrderState, OrderState.id == Order.state_id).where(OrderState.code == state_code)
+        result = await self.session.execute(query)
+        return int(result.scalar_one())
+
+    async def get_by_id_for_update(self, *, order_id: int) -> Order | None:
+        result = await self.session.execute(
+            select(Order).where(Order.id == order_id).with_for_update()
+        )
+        return result.scalar_one_or_none()
+
 
 class OrderItemRepository(BaseRepository[OrderItem]):
     def __init__(self, session: AsyncSession) -> None:
@@ -57,3 +86,7 @@ class OrderHistoryRepository(BaseRepository[OrderHistory]):
             select(OrderHistory).where(OrderHistory.order_id == order_id).order_by(OrderHistory.created_at)
         )
         return list(result.scalars().all())
+
+    async def get_history_by_event_key(self, *, event_key: str) -> OrderHistory | None:
+        result = await self.session.execute(select(OrderHistory).where(OrderHistory.event_key == event_key))
+        return result.scalar_one_or_none()

@@ -68,9 +68,9 @@ export const navigationRoutes: readonly NavigationRoute[] = [
   },
   {
     to: routePaths.orders,
-    label: 'Pedidos',
-    description: 'Seguimiento y preparación de pedidos.',
-    allowedRoles: ['ADMIN', 'PEDIDOS', 'CLIENT'],
+    label: 'Mis pedidos',
+    description: 'Seguimiento de tus pedidos como cliente.',
+    allowedRoles: ['CLIENT'],
     exact: true,
   },
 ] as const

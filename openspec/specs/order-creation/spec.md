@@ -1,56 +1,139 @@
 # Spec: order-creation
 
-## Overview
+## Purpose
 
-Creates orders atomically from the shopping cart, with immutable snapshots of products, prices, delivery address, and initial order history.
+Define atomic order creation and lifecycle baseline rules: validated order item snapshots, stock reservation, delivery address resolution, and append-only order history under an explicit FSM.
+## Requirements
+### Requirement: Atomic order creation
 
-## Entities
+Order, order items, stock decrement, and initial history entry SHALL be created in one transaction.
 
-### Order
+#### Scenario: Order creation commits all or nothing
+- **GIVEN** a valid create-order request
+- **WHEN** the order is created
+- **THEN** order header, items, stock updates, and initial history are persisted atomically
 
-- Belongs to a user
-- Has a state (initial: PENDIENTE)
-- Has optional payment method
-- Has unique order number
-- Contains immutable delivery address snapshot
-- Contains immutable product snapshots in order items
-- Tracks subtotal
+### Requirement: Product and stock validation
 
-### OrderItem
+The system SHALL validate product existence, active/available status, and sufficient stock before accepting order creation.
 
-- Belongs to an order
-- Contains product snapshot (id, name, slug, unit_price)
-- Contains quantity and calculated line_total
-- Contains customization snapshot (removed_ingredients as comma-separated string)
+#### Scenario: Insufficient stock is rejected
+- **GIVEN** one requested product has insufficient stock
+- **WHEN** order creation is requested
+- **THEN** the system rejects the request
+- **AND** does not mutate order or stock data
 
-### OrderHistory
+### Requirement: Delivery address resolution
 
-- Belongs to an order
-- Records state transitions (from_state → to_state)
-- Records who made the change
-- Append-only audit trail
+Order creation SHALL use an explicit `delivery_address_id` when provided, otherwise fallback to the user default delivery address.
 
-## Business rules
+#### Scenario: Missing explicit address uses default
+- **GIVEN** a user has a default delivery address
+- **WHEN** order creation omits `delivery_address_id`
+- **THEN** the order uses the default address snapshot
 
-1. **Atomic creation**: Order, items, stock decrement, and history are created in a single transaction.
-2. **Stock validation**: Each product must have sufficient stock for the requested quantity.
-3. **Product validation**: Products must exist, be active, be available, and not be soft-deleted.
-4. **Customization validation**: Removed ingredient IDs must reference valid, removable ingredients for the product.
-5. **Address resolution**: Uses provided address_id, or falls back to user's default address.
-6. **Snapshot immutability**: Order items capture product name, slug, and price at creation time. Changes to products after order creation do not affect existing orders.
-7. **Order number uniqueness**: Generated with timestamp + random suffix to prevent collisions.
+### Requirement: Snapshot immutability
 
-## API endpoints
+Order item snapshots SHALL persist immutable product name, slug, unit price, and customization snapshot at creation time.
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| POST | /api/v1/orders | Yes | Create order |
-| GET | /api/v1/orders | Yes | List user's orders |
-| GET | /api/v1/orders/{id} | Yes | Get order detail |
+#### Scenario: Product changes do not rewrite prior orders
+- **GIVEN** an order already exists
+- **WHEN** product catalog data changes later
+- **THEN** existing order item snapshots remain unchanged
 
-## Dependencies
+### Requirement: Explicit order lifecycle FSM
 
-- `auth-rbac-core` — user identity and JWT authentication
-- `delivery-addresses` — delivery address CRUD
-- `checkout-preflight-validation` — preflight validation pattern
-- `product-catalog-management` — product model and stock
+The system MUST allow order state changes only through this matrix: `PENDIENTE -> CONFIRMADO|CANCELADO`, `CONFIRMADO -> EN_PREPARACION|CANCELADO`, `EN_PREPARACION -> EN_CAMINO|CANCELADO`, `EN_CAMINO -> ENTREGADO`; `ENTREGADO` and `CANCELADO` SHALL be terminal.
+
+#### Scenario: Valid transition is accepted
+- **GIVEN** an order in `CONFIRMADO`
+- **WHEN** an authorized admin transitions it to `EN_PREPARACION`
+- **THEN** the order state becomes `EN_PREPARACION`
+
+#### Scenario: Invalid transition is rejected
+- **GIVEN** an order in `PENDIENTE`
+- **WHEN** any actor attempts to transition it to `ENTREGADO`
+- **THEN** the system rejects with a stable FSM error
+
+### Requirement: Role-based transition permissions
+
+The system SHALL enforce actor permissions: customers MAY cancel only their own `PENDIENTE` orders; admins MAY perform operational transitions and permitted cancellations; system actors MAY perform payment-driven transitions only.
+
+#### Scenario: Unauthorized customer transition is rejected
+- **GIVEN** a customer does not own an order
+- **WHEN** the customer requests cancellation or transition
+- **THEN** the system rejects with HTTP 403
+
+### Requirement: Immutable transition audit
+
+Every accepted order transition MUST append an immutable history entry containing previous state, new state, actor type, actor id when present, source, reason, and timestamp. Transition audit entries MUST NOT be edited or deleted by business flows.
+
+#### Scenario: Audit captures system transition
+- **GIVEN** payment approval confirms a pending order
+- **WHEN** the system applies `PENDIENTE -> CONFIRMADO`
+- **THEN** history records actor type `system`, source `payment`, and the payment reference
+
+### Requirement: OrderHistory append-only under FSM control
+
+Order history SHALL be the append-only audit trail for FSM transitions and SHALL be written only after a transition is accepted. (Previously: history recorded state transitions without centralized FSM rules.)
+
+#### Scenario: Invalid transition has no history
+
+- GIVEN an order in terminal `CANCELADO`
+- WHEN any actor attempts another transition
+- THEN the system MUST reject the transition
+- AND the history count remains unchanged
+
+### Requirement: Stock side effects on lifecycle changes
+
+Order creation SHALL decrement stock once. Transition to `CANCELADO` MUST restore item stock exactly once. Non-cancel transitions MUST NOT change stock.
+
+#### Scenario: Repeated cancellation does not double-restore stock
+- **GIVEN** an order already transitioned to `CANCELADO`
+- **WHEN** cancellation is requested again
+- **THEN** stock does not increase again
+
+### Requirement: Customer order history
+
+Authenticated customers MUST be able to list only their own orders, newest first. The list SHALL support state filtering and pagination metadata using the project skip/limit/total convention.
+
+#### Scenario: Customer lists own orders
+- GIVEN an authenticated customer with multiple orders
+- WHEN they request the order history
+- THEN the response contains only orders owned by that customer
+- AND orders are sorted newest first with pagination metadata
+
+#### Scenario: State filter limits results
+- GIVEN an authenticated customer has orders in several FSM states
+- WHEN they request history filtered by `CONFIRMADO`
+- THEN every returned order has state `CONFIRMADO`
+- AND the total reflects the filtered result set
+
+#### Scenario: Cross-customer orders are hidden
+- GIVEN another customer has orders in the system
+- WHEN the authenticated customer lists order history
+- THEN those other orders MUST NOT appear in items or totals
+
+### Requirement: Customer order detail visibility
+
+Authenticated customers MUST be able to view details for their own orders only. Detail SHALL include current FSM state, total, item snapshots, delivery address snapshot, payment summary, and transition history needed for customer visibility.
+
+#### Scenario: Customer views own order detail
+- GIVEN an authenticated customer owns an order
+- WHEN they request that order detail
+- THEN the response includes item snapshots, delivery snapshot, total, current state, payment summary, and visible history
+
+#### Scenario: Customer cannot view another customer's order
+- GIVEN an authenticated customer does not own an order
+- WHEN they request that order detail
+- THEN the system rejects or hides it without exposing order data
+
+### Requirement: Post-creation order confirmation
+
+After successful order creation, the customer experience SHALL provide enough order identity and payment state information to route the customer to confirmation, payment, or retry feedback.
+
+#### Scenario: Created order can be confirmed to customer
+- GIVEN order creation succeeds
+- WHEN the frontend receives the creation result
+- THEN it can identify the created order and show confirmation or next payment action
+

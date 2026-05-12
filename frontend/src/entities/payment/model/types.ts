@@ -18,6 +18,7 @@ export interface PaymentStatusResponse {
   amount: string
   attempts: number
   failure_reason: string | null
+  retry_allowed: boolean
   created_at: string
   updated_at: string
 }

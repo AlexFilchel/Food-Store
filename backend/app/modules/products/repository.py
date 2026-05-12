@@ -120,6 +120,18 @@ class ProductRepository(BaseRepository[Product]):
         result = await self.session.execute(statement)
         return result.scalar_one_or_none()
 
+    async def list_by_ids_for_update(self, product_ids: list[int]) -> list[Product]:
+        if not product_ids:
+            return []
+
+        result = await self.session.execute(
+            select(Product)
+            .where(Product.id.in_(sorted(set(product_ids))))
+            .order_by(Product.id.asc())
+            .with_for_update()
+        )
+        return list(result.scalars().all())
+
     async def list_categories_for_product(self, product_id: int) -> list[Category]:
         result = await self.session.execute(
             select(Category)

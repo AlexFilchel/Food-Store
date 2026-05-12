@@ -48,6 +48,33 @@ export interface OrderResponse {
   updated_at: string
 }
 
+export interface PaymentSummaryResponse {
+  payment_id: number
+  status: string
+  amount: string
+  attempts: number
+  failure_reason: string | null
+  retry_allowed: boolean
+}
+
+export interface OrderHistoryResponse {
+  id: number
+  from_state: string | null
+  to_state: string
+  changed_by_user_id: number | null
+  actor_type: string | null
+  source: string | null
+  reason_code: string | null
+  note: string | null
+  event_key: string | null
+  created_at: string
+}
+
+export interface OrderDetailResponse extends OrderResponse {
+  payment: PaymentSummaryResponse | null
+  history: OrderHistoryResponse[]
+}
+
 export interface OrderListResponse {
   id: number
   order_number: string
@@ -55,4 +82,17 @@ export interface OrderListResponse {
   item_count: number
   subtotal: string
   created_at: string
+}
+
+export interface OrderListPageResponse {
+  items: OrderListResponse[]
+  total: number
+  skip: number
+  limit: number
+}
+
+export interface OrderListFilters {
+  state_code?: string
+  skip?: number
+  limit?: number
 }

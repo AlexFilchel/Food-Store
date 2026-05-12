@@ -53,7 +53,11 @@ class OrderHistoryResponse(BaseModel):
     from_state: str | None
     to_state: str
     changed_by_user_id: int | None
+    actor_type: str | None
+    source: str | None
+    reason_code: str | None
     note: str | None
+    event_key: str | None
     created_at: str
 
     @classmethod
@@ -63,9 +67,24 @@ class OrderHistoryResponse(BaseModel):
             from_state=state_map.get(entry.from_state_id) if entry.from_state_id else None,
             to_state=state_map[entry.to_state_id],
             changed_by_user_id=entry.changed_by_user_id,
+            actor_type=entry.actor_type,
+            source=entry.source,
+            reason_code=entry.reason_code,
             note=entry.note,
+            event_key=entry.event_key,
             created_at=to_utc_iso(entry.created_at) if isinstance(entry.created_at, datetime) else entry.created_at,
         )
+
+
+class OrderCancelRequest(BaseModel):
+    reason_code: str | None = Field(default=None, max_length=80)
+    note: str | None = Field(default=None, max_length=500)
+
+
+class OrderTransitionRequest(BaseModel):
+    to_state_code: str = Field(min_length=3, max_length=50)
+    reason_code: str | None = Field(default=None, max_length=80)
+    note: str | None = Field(default=None, max_length=500)
 
 
 class OrderDeliveryAddressResponse(BaseModel):
@@ -145,3 +164,24 @@ class OrderListResponse(BaseModel):
             subtotal=f"{order.subtotal:.2f}",
             created_at=to_utc_iso(order.created_at),
         )
+
+
+class PaymentSummaryResponse(BaseModel):
+    payment_id: int
+    status: str
+    amount: str
+    attempts: int
+    failure_reason: str | None
+    retry_allowed: bool
+
+
+class OrderDetailResponse(OrderResponse):
+    payment: PaymentSummaryResponse | None = None
+    history: list[OrderHistoryResponse] = Field(default_factory=list)
+
+
+class OrderListPageResponse(BaseModel):
+    items: list[OrderListResponse]
+    total: int
+    skip: int
+    limit: int

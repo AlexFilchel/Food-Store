@@ -23,11 +23,20 @@ class PaymentStatusResponse(BaseModel):
     amount: str
     attempts: int
     failure_reason: str | None
+    retry_allowed: bool
     created_at: str
     updated_at: str
 
     @classmethod
-    def from_model(cls, payment, *, status_name: str, created_at: str, updated_at: str) -> "PaymentStatusResponse":
+    def from_model(
+        cls,
+        payment,
+        *,
+        status_name: str,
+        created_at: str,
+        updated_at: str,
+        retry_allowed: bool,
+    ) -> "PaymentStatusResponse":
         return cls(
             payment_id=payment.id,
             order_id=payment.order_id,
@@ -36,6 +45,7 @@ class PaymentStatusResponse(BaseModel):
             amount=f"{payment.amount:.2f}",
             attempts=payment.attempts,
             failure_reason=payment.failure_reason,
+            retry_allowed=retry_allowed,
             created_at=created_at,
             updated_at=updated_at,
         )

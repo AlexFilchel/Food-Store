@@ -107,13 +107,6 @@ const stockUser: AuthUser = {
   roles: ['STOCK'],
 }
 
-const ordersUser: AuthUser = {
-  ...clientUser,
-  id: 4,
-  email: 'orders@example.com',
-  roles: ['PEDIDOS'],
-}
-
 function authProblem(status = 401): AxiosError {
   return {
     isAxiosError: true,
@@ -283,14 +276,14 @@ describe('AppRouter access control', () => {
       user: clientUser,
       path: '/app',
       heading: 'Espacio del cliente',
-      visible: [/Mi espacio/i],
-      hidden: [/Administración/i, /Stock/i, /Pedidos/i],
+      visible: [/Mi espacio/i, /Mis pedidos/i],
+      hidden: [/Administración/i, /Stock/i],
     },
     {
       user: adminUser,
       path: '/admin',
       heading: 'Panel de administración',
-      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Stock/i, /Pedidos/i],
+      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Stock/i],
       hidden: [],
     },
     {
@@ -299,13 +292,6 @@ describe('AppRouter access control', () => {
       heading: 'Centro de stock',
       visible: [/Stock/i],
       hidden: [/Mi espacio/i, /Administración/i, /Pedidos/i],
-    },
-    {
-      user: ordersUser,
-      path: '/orders',
-      heading: 'Mesa operativa de pedidos',
-      visible: [/Pedidos/i],
-      hidden: [/Mi espacio/i, /Administración/i, /Stock/i],
     },
   ])('renders role-aware navigation for $user.roles', async ({ user, path, heading, visible, hidden }) => {
     vi.spyOn(authClient, 'me').mockResolvedValue(user)
@@ -348,6 +334,24 @@ describe('AppRouter access control', () => {
 
     renderRouter(['/admin/products'])
 
+    expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
+  })
+
+  it('redirects anonymous users from customer tracking and payment-result routes', async () => {
+    const firstRender = renderRouter(['/orders'])
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    firstRender.unmount()
+
+    const secondRender = renderRouter(['/payment/result?external_reference=order-1'])
+    expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+    secondRender.unmount()
+  })
+
+  it('blocks non-client authenticated users from customer tracking routes', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(adminUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: adminUser })
+
+    renderRouter(['/orders'])
     expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
   })
 

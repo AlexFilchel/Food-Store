@@ -68,7 +68,6 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           path={routePaths.register}
         />
         <Route path={routePaths.accessDenied} element={<AccessDeniedPage />} />
-        <Route path={routePaths.paymentResult} element={<PaymentResultPage />} />
 
         <Route
           element={
@@ -85,8 +84,9 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           <Route path={routePaths.adminIngredients} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminIngredientsPage /></ProtectedByRole>} />
           <Route path={routePaths.adminProducts} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminProductsPage /></ProtectedByRole>} />
           <Route path={routePaths.stock} element={<ProtectedByRole allowedRoles={['ADMIN', 'STOCK']}><StockPage /></ProtectedByRole>} />
-          <Route path={routePaths.orders} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS', 'CLIENT']}><OrdersPage /></ProtectedByRole>} />
-          <Route path={routePaths.orderDetail} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS', 'CLIENT']}><OrderDetailPage /></ProtectedByRole>} />
+          <Route path={routePaths.orders} element={<ProtectedByRole allowedRoles={['CLIENT']}><OrdersPage /></ProtectedByRole>} />
+          <Route path={routePaths.orderDetail} element={<ProtectedByRole allowedRoles={['CLIENT']}><OrderDetailPage /></ProtectedByRole>} />
+          <Route path={routePaths.paymentResult} element={<ProtectedByRole allowedRoles={['CLIENT']}><PaymentResultPage /></ProtectedByRole>} />
         </Route>
 
         <Route path="*" element={<NotFoundPage />} />
