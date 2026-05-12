@@ -24,6 +24,7 @@ class Settings(BaseSettings):
     mp_access_token: str = Field("TEST-placeholder-access-token", alias="MP_ACCESS_TOKEN")
     mp_public_key: str = Field("TEST-placeholder-public-key", alias="MP_PUBLIC_KEY")
     mp_notification_url: str = Field("http://localhost:8000/api/v1/payments/webhook", alias="MP_NOTIFICATION_URL")
+    mp_frontend_url: str = Field("http://localhost:5173", alias="MP_FRONTEND_URL")
     bootstrap_admin_email: str = Field("admin@foodstore.local", alias="BOOTSTRAP_ADMIN_EMAIL")
     bootstrap_admin_password: str = Field("Admin1234!", alias="BOOTSTRAP_ADMIN_PASSWORD")
     bootstrap_admin_full_name: str = Field("Food Store Admin", alias="BOOTSTRAP_ADMIN_FULL_NAME")

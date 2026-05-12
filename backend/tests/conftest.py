@@ -16,6 +16,8 @@ async def backend_env(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> AsyncI
     monkeypatch.setenv("DATABASE_URL", f"sqlite+aiosqlite:///{database_path}")
     monkeypatch.setenv("SECRET_KEY", "test-secret-key-with-at-least-32-characters")
     monkeypatch.setenv("CORS_ORIGINS", "http://localhost:5173")
+    monkeypatch.setenv("ENVIRONMENT", "testing")
+    monkeypatch.setenv("MP_ACCESS_TOKEN", "TEST-placeholder-for-tests")
     monkeypatch.setenv("BOOTSTRAP_ADMIN_EMAIL", "admin@test.local")
     monkeypatch.setenv("BOOTSTRAP_ADMIN_PASSWORD", "Admin1234!")
     monkeypatch.setenv("BOOTSTRAP_ADMIN_FIRST_NAME", "Admin")

@@ -12,6 +12,7 @@ export const routePaths = {
   stock: '/stock',
   orders: '/orders',
   orderDetail: '/orders/:orderId',
+  paymentResult: '/payment/result',
   accessDenied: '/access-denied',
 } as const
 

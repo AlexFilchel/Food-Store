@@ -9,7 +9,7 @@ from app.core.security import hash_password
 from app.core.time import utc_now
 from app.modules.identity.model import Role, User, UserRole
 from app.modules.orders.model import OrderState
-from app.modules.payments.model import PaymentMethod
+from app.modules.payments.model import PaymentMethod, PaymentStatus
 
 ROLE_SEED = [
     {"id": 1, "code": "ADMIN", "name": "Administrator", "description": "Full system access"},
@@ -31,6 +31,19 @@ PAYMENT_METHOD_SEED = [
     {"id": 1, "code": "MERCADOPAGO", "name": "Mercado Pago", "description": "Checkout principal", "is_active": True},
     {"id": 2, "code": "EFECTIVO", "name": "Efectivo", "description": "Pago en efectivo", "is_active": True},
     {"id": 3, "code": "TRANSFERENCIA", "name": "Transferencia", "description": "Transferencia bancaria", "is_active": True},
+]
+
+PAYMENT_STATUS_SEED = [
+    {"id": 1, "code": "PENDING", "name": "Pendiente", "description": "Pago iniciado, esperando confirmación", "is_terminal": False},
+    {"id": 2, "code": "APPROVED", "name": "Aprobado", "description": "Pago aprobado y acreditado", "is_terminal": True},
+    {"id": 3, "code": "AUTHORIZED", "name": "Autorizado", "description": "Pago autorizado pendiente de captura", "is_terminal": False},
+    {"id": 4, "code": "IN_PROCESS", "name": "En proceso", "description": "Pago en proceso de revisión", "is_terminal": False},
+    {"id": 5, "code": "IN_MEDIATION", "name": "En mediación", "description": "Pago en mediación", "is_terminal": False},
+    {"id": 6, "code": "REJECTED", "name": "Rechazado", "description": "Pago rechazado", "is_terminal": True},
+    {"id": 7, "code": "CANCELLED", "name": "Cancelado", "description": "Pago cancelado", "is_terminal": True},
+    {"id": 8, "code": "REFUNDED", "name": "Reembolsado", "description": "Pago reembolsado", "is_terminal": True},
+    {"id": 9, "code": "CHARGED_BACK", "name": "Contracargo", "description": "Pago con contracargo", "is_terminal": True},
+    {"id": 10, "code": "FAILED", "name": "Fallido", "description": "Pago fallido por error técnico", "is_terminal": True},
 ]
 
 
@@ -57,6 +70,7 @@ async def seed_database() -> None:
             await _upsert_catalog(session, Role, ROLE_SEED)
             await _upsert_catalog(session, OrderState, ORDER_STATE_SEED)
             await _upsert_catalog(session, PaymentMethod, PAYMENT_METHOD_SEED)
+            await _upsert_catalog(session, PaymentStatus, PAYMENT_STATUS_SEED)
 
             result = await session.execute(select(User).where(User.email == settings.bootstrap_admin_email))
             admin_user = result.scalar_one_or_none()

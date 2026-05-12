@@ -5,6 +5,7 @@ import { routePaths } from '@/app/routes/route-config'
 import { useCheckoutPreflightMutation } from '@/features/checkout/model/hooks'
 import { useDeliveryAddressListQuery } from '@/features/delivery-addresses/model/hooks'
 import { useCreateOrderMutation } from '@/features/orders/model/hooks'
+import { useInitPaymentMutation } from '@/features/payments/model/hooks'
 import { getProblemDetails } from '@/shared/api/problem-details'
 import { formatPriceFromCents, multiplyPriceByQuantity } from '@/shared/lib/cart-pricing'
 import { useAuthStore } from '@/shared/stores/auth-store'
@@ -35,6 +36,7 @@ export function CartPage() {
   const checkoutPayload = toCheckoutPayload()
   const checkoutPreflight = useCheckoutPreflightMutation()
   const createOrder = useCreateOrderMutation()
+  const initPayment = useInitPaymentMutation()
   const addressQuery = useDeliveryAddressListQuery()
   const addresses = addressQuery.data ?? []
 
@@ -76,17 +78,23 @@ export function CartPage() {
           removed_ingredient_ids: item.removed_ingredient_ids,
         })),
         delivery_address_id: effectiveAddressId,
+        payment_method_code: 'MERCADOPAGO',
       })
 
-      // step 3: clear cart and show success
+      // step 3: init payment with MercadoPago
+      const payment = await initPayment.mutateAsync({
+        order_id: order.id,
+      })
+
+      // step 4: clear cart and redirect to MercadoPago
       clear()
-      setOrderSuccess(`Pedido ${order.order_number} creado con éxito. Subtotal: $${order.subtotal}`)
+      setOrderSuccess(`Pedido ${order.order_number} creado. Redirigiendo a MercadoPago...`)
       setStatusMessage(null)
 
-      // navigate to orders page after a short delay
+      // redirect to MercadoPago checkout
       setTimeout(() => {
-        navigate(routePaths.orders)
-      }, 2000)
+        window.location.href = payment.sandbox_init_point || payment.init_point
+      }, 1500)
     } catch (error) {
       const problem = getProblemDetails(error)
       setCheckoutError(problem?.detail ?? 'No pudimos procesar tu pedido. Revisá tu carrito e intentá de nuevo.')
@@ -224,9 +232,9 @@ export function CartPage() {
               className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
               onClick={handleCheckout}
               type="button"
-              disabled={checkoutPreflight.isPending || createOrder.isPending}
+              disabled={checkoutPreflight.isPending || createOrder.isPending || initPayment.isPending}
             >
-              {checkoutPreflight.isPending || createOrder.isPending ? 'Procesando pedido...' : 'Confirmar pedido'}
+              {checkoutPreflight.isPending || createOrder.isPending || initPayment.isPending ? 'Procesando pedido...' : 'Confirmar pedido'}
             </button>
 
             {checkoutError ? <p className="text-sm text-rose-700">{checkoutError}</p> : null}

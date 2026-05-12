@@ -7,6 +7,7 @@ from app.modules.customer_profile.router import router as customer_profile_route
 from app.modules.delivery_addresses.router import router as delivery_address_router
 from app.modules.ingredients.router import allergen_router, ingredient_router
 from app.modules.orders.router import router as order_router
+from app.modules.payments.router import router as payment_router
 from app.modules.products.router import router as product_router
 from app.modules.products.public_router import router as public_catalog_product_router
 from app.modules.system.router import router as system_router
@@ -20,6 +21,7 @@ api_router.include_router(delivery_address_router)
 api_router.include_router(ingredient_router)
 api_router.include_router(allergen_router)
 api_router.include_router(order_router)
+api_router.include_router(payment_router)
 api_router.include_router(product_router)
 api_router.include_router(public_catalog_product_router)
 api_router.include_router(system_router)

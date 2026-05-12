@@ -1,7 +1,10 @@
+import { useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 
 import { routePaths } from '@/app/routes/route-config'
 import { useOrderQuery } from '@/features/orders/model/hooks'
+import { usePaymentByOrderQuery, useRetryPaymentMutation } from '@/features/payments/model/hooks'
+import { getProblemDetails } from '@/shared/api/problem-details'
 
 function getStateBadgeColor(state: string) {
   switch (state) {
@@ -22,10 +25,50 @@ function getStateBadgeColor(state: string) {
   }
 }
 
+function getPaymentStatusBadgeColor(status: string) {
+  switch (status) {
+    case 'Aprobado':
+      return 'bg-emerald-100 text-emerald-900'
+    case 'Pendiente':
+    case 'En proceso':
+    case 'Autorizado':
+      return 'bg-amber-100 text-amber-900'
+    case 'Rechazado':
+    case 'Cancelado':
+    case 'Fallido':
+    case 'Contracargo':
+      return 'bg-rose-100 text-rose-900'
+    case 'Reembolsado':
+      return 'bg-slate-100 text-slate-900'
+    default:
+      return 'bg-slate-100 text-slate-900'
+  }
+}
+
 export function OrderDetailPage() {
   const { orderId } = useParams<{ orderId: string }>()
-  const orderQuery = useOrderQuery(orderId ? Number(orderId) : undefined)
+  const orderIdNum = orderId ? Number(orderId) : undefined
+  const orderQuery = useOrderQuery(orderIdNum)
   const order = orderQuery.data
+
+  const paymentQuery = usePaymentByOrderQuery(orderIdNum)
+  const payment = paymentQuery.data
+
+  const retryPayment = useRetryPaymentMutation()
+  const [retryError, setRetryError] = useState<string | null>(null)
+
+  const handleRetryPayment = async () => {
+    if (!payment) return
+    setRetryError(null)
+
+    try {
+      const result = await retryPayment.mutateAsync(payment.payment_id)
+      window.location.href = result.sandbox_init_point || result.init_point
+    } catch (error) {
+      const problem = getProblemDetails(error)
+      setRetryError(problem?.detail ?? 'No pudimos iniciar el reintento de pago.')
+    }
+  }
 
   if (orderQuery.isLoading) {
     return (
@@ -49,6 +92,8 @@ export function OrderDetailPage() {
       </section>
     )
   }
+
+  const canRetry = payment && ['Rechazado', 'Cancelado', 'Fallido'].includes(payment.status)
 
   return (
     <section className="space-y-6">
@@ -121,6 +166,39 @@ export function OrderDetailPage() {
               <dd>${order.subtotal}</dd>
             </div>
           </dl>
+
+          {/* payment status */}
+          {payment ? (
+            <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">
+              <p className="font-medium text-slate-900">Estado del pago</p>
+              <div className="mt-2 flex items-center gap-2">
+                <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-semibold ${getPaymentStatusBadgeColor(payment.status)}`}>
+                  {payment.status}
+                </span>
+                <span className="text-xs text-slate-500">${payment.amount}</span>
+              </div>
+              {payment.attempts > 1 ? (
+                <p className="mt-1 text-xs text-slate-500">Intentos: {payment.attempts}</p>
+              ) : null}
+              {payment.failure_reason ? (
+                <p className="mt-1 text-xs text-rose-600">{payment.failure_reason}</p>
+              ) : null}
+
+              {canRetry ? (
+                <div className="mt-3 space-y-2">
+                  <button
+                    className="w-full rounded-xl bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:opacity-50"
+                    onClick={handleRetryPayment}
+                    disabled={retryPayment.isPending}
+                    type="button"
+                  >
+                    {retryPayment.isPending ? 'Iniciando pago...' : 'Reintentar pago'}
+                  </button>
+                  {retryError ? <p className="text-xs text-rose-600">{retryError}</p> : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
 
           {order.notes ? (
             <div className="rounded-2xl bg-slate-50 p-4 text-sm text-slate-700">

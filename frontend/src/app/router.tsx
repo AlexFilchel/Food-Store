@@ -26,6 +26,7 @@ import { LoginPage } from '@/pages/login-page/ui/login-page'
 import { NotFoundPage } from '@/pages/not-found-page/ui/not-found-page'
 import { OrdersPage } from '@/pages/orders-page/ui/orders-page'
 import { OrderDetailPage } from '@/pages/order-detail-page/ui/order-detail-page'
+import { PaymentResultPage } from '@/pages/payment-result-page/ui/payment-result-page'
 import { PublicProductDetailPage } from '@/pages/public-product-detail-page/ui/public-product-detail-page'
 import { RegisterPage } from '@/pages/register-page/ui/register-page'
 import { StockPage } from '@/pages/stock-page/ui/stock-page'
@@ -67,6 +68,7 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           path={routePaths.register}
         />
         <Route path={routePaths.accessDenied} element={<AccessDeniedPage />} />
+        <Route path={routePaths.paymentResult} element={<PaymentResultPage />} />
 
         <Route
           element={

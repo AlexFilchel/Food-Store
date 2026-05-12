@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Index, Integer, Numeric, String, Text, text
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, Numeric, String, Text
 from sqlmodel import Field, SQLModel
 
 from app.core.models import AuditMixin

@@ -1,5 +1,3 @@
-from collections.abc import Callable
-
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 
 from app.core.database import get_session_factory
@@ -9,7 +7,7 @@ from app.modules.delivery_addresses.repository import DeliveryAddressRepository
 from app.modules.identity.repository import RoleRepository, UserRepository, UserRoleRepository
 from app.modules.ingredients.repository import AllergenRepository, IngredientAllergenRepository, IngredientRepository
 from app.modules.orders.repository import OrderHistoryRepository, OrderItemRepository, OrderRepository, OrderStateRepository
-from app.modules.payments.repository import PaymentMethodRepository
+from app.modules.payments.repository import PaymentEventRepository, PaymentMethodRepository, PaymentRepository, PaymentStatusRepository
 from app.modules.products.repository import ProductRepository
 
 
@@ -34,6 +32,9 @@ class SqlAlchemyUnitOfWork:
         self.order_items = OrderItemRepository(self.session)
         self.order_history = OrderHistoryRepository(self.session)
         self.payment_methods = PaymentMethodRepository(self.session)
+        self.payment_statuses = PaymentStatusRepository(self.session)
+        self.payments = PaymentRepository(self.session)
+        self.payment_events = PaymentEventRepository(self.session)
         self.products = ProductRepository(self.session)
         return self
 
