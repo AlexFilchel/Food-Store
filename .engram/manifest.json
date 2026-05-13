@@ -104,6 +104,14 @@
       "sessions": 1,
       "memories": 0,
       "prompts": 6
+    },
+    {
+      "id": "044021ab",
+      "created_by": "filch",
+      "created_at": "2026-05-13T22:26:06Z",
+      "sessions": 1,
+      "memories": 15,
+      "prompts": 23
     }
   ]
 }
