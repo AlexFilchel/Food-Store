@@ -42,5 +42,5 @@
 - [x] 6.1 Add route-guard/navigation tests proving ADMIN can access user administration and non-admin/anonymous users cannot render protected content.
 - [x] 6.2 Add user list UI tests for search/filter/pagination states and API error handling.
 - [x] 6.3 Add mutation UI tests for create/update/role/lifecycle/reset success feedback and query refresh behavior.
-- [ ] 6.4 Run targeted backend tests for user administration and auth regression coverage.
-- [ ] 6.5 Run targeted frontend tests and typecheck for user-administration routes, hooks, and components.
+- [x] 6.4 Run targeted backend tests for user administration and auth regression coverage.
+- [x] 6.5 Run targeted frontend tests and typecheck for user-administration routes, hooks, and components.

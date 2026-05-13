@@ -111,7 +111,7 @@ describe('AdminUserDetailPageContent', () => {
 
     const user = userEvent.setup()
     const roleCheckboxes = screen.getAllByRole('checkbox', { name: /admin|stock|pedidos|cliente/i })
-    await user.click(roleCheckboxes[0])
+    await user.click(roleCheckboxes[1])
     await user.click(screen.getByRole('button', { name: 'Guardar roles' }))
 
     expect(roleMutation.mutateAsync).toHaveBeenCalled()

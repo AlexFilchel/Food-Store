@@ -1,4 +1,5 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import userEvent from '@testing-library/user-event'
 
 import { AdminUsersPageContent } from '@/features/user-administration/ui/admin-users-page-content'
@@ -27,7 +28,11 @@ describe('AdminUsersPageContent', () => {
       error: null,
     } as never)
 
-    render(<AdminUsersPageContent />)
+    render(
+      <MemoryRouter>
+        <AdminUsersPageContent />
+      </MemoryRouter>,
+    )
 
     expect(screen.getByText('Cargando usuarios...')).toBeInTheDocument()
   })
@@ -44,7 +49,11 @@ describe('AdminUsersPageContent', () => {
       error: null,
     } as never)
 
-    render(<AdminUsersPageContent />)
+    render(
+      <MemoryRouter>
+        <AdminUsersPageContent />
+      </MemoryRouter>,
+    )
 
     expect(screen.getByText('No hay usuarios para mostrar')).toBeInTheDocument()
   })
@@ -78,11 +87,21 @@ describe('AdminUsersPageContent', () => {
       error: null,
     } as never)
 
-    render(<AdminUsersPageContent />)
+    render(
+      <MemoryRouter>
+        <AdminUsersPageContent />
+      </MemoryRouter>,
+    )
 
-    expect(screen.getByText('Ada Lovelace')).toBeInTheDocument()
-    expect(screen.getByText('ada@example.com')).toBeInTheDocument()
-    expect(screen.getByText('ADMIN')).toBeInTheDocument()
+    const card = screen.getByText('Ada Lovelace').closest('article')
+    expect(card).not.toBeNull()
+    if (!card) {
+      return
+    }
+
+    expect(within(card).getByText('Ada Lovelace')).toBeInTheDocument()
+    expect(within(card).getByText('ada@example.com')).toBeInTheDocument()
+    expect(within(card).getByText('ADMIN')).toBeInTheDocument()
   })
 
   it('submits create user form and invalidates query', async () => {
@@ -109,7 +128,11 @@ describe('AdminUsersPageContent', () => {
       error: null,
     } as never)
 
-    render(<AdminUsersPageContent />)
+    render(
+      <MemoryRouter>
+        <AdminUsersPageContent />
+      </MemoryRouter>,
+    )
 
     const user = userEvent.setup()
     const nameInputs = screen.getAllByLabelText('Nombre')
@@ -135,10 +158,17 @@ describe('AdminUsersPageContent', () => {
       data: undefined,
       isLoading: false,
       isError: true,
-      error: { response: { status: 403, data: { title: 'Forbidden', detail: 'Access denied', status: 403, code: 'FORBIDDEN' } } },
+      error: {
+        isAxiosError: true,
+        response: { status: 403, data: { title: 'Forbidden', detail: 'Access denied', status: 403, code: 'FORBIDDEN' } },
+      },
     } as never)
 
-    render(<AdminUsersPageContent />)
+    render(
+      <MemoryRouter>
+        <AdminUsersPageContent />
+      </MemoryRouter>,
+    )
 
     expect(screen.getByText('No tenés permisos para acceder a la administración de usuarios.')).toBeInTheDocument()
   })
