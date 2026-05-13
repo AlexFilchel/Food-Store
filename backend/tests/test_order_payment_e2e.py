@@ -29,6 +29,20 @@ async def login_admin(client):
     return {'Authorization': f"Bearer {response.json()['access_token']}"}
 
 
+async def assign_role(*, email: str, role_code: str) -> None:
+    async with get_session_factory()() as session:
+        from app.modules.identity.model import Role, User, UserRole
+
+        user = (await session.execute(select(User).where(User.email == email))).scalar_one()
+        role = (await session.execute(select(Role).where(Role.code == role_code))).scalar_one()
+        existing = await session.execute(
+            select(UserRole).where(UserRole.user_id == user.id, UserRole.role_id == role.id)
+        )
+        if existing.scalar_one_or_none() is None:
+            session.add(UserRole(user_id=user.id, role_id=role.id))
+        await session.commit()
+
+
 class RedirectFallbackGateway:
     async def create_preference(self, *, external_reference: str, items: list[dict], back_urls: dict, notification_url: str):
         return MercadoPagoPreferenceResult(
@@ -662,6 +676,105 @@ async def test_admin_transition_flow_and_invalid_transition_has_no_history(clien
     terminal_invalid = await client.post(f'/api/v1/admin/orders/{order_id}/transition', headers=admin_headers, json={'to_state_code': 'CANCELADO'})
     assert terminal_invalid.status_code == 409
     assert len(await fetch_order_history(order_id)) == expected_history_count
+
+
+@pytest.mark.asyncio
+async def test_operations_orders_access_and_filters(client):
+    admin_headers = await login_admin(client)
+    pedidos_user = await register_user(client, email='ops-manager@example.com')
+    await assign_role(email='ops-manager@example.com', role_code='PEDIDOS')
+    pedidos_headers = {'Authorization': f"Bearer {pedidos_user.json()['access_token']}"}
+
+    customer = await register_user(client, email='ops-customer@example.com')
+    customer_headers = {'Authorization': f"Bearer {customer.json()['access_token']}"}
+
+    product = await create_product(client, admin_headers, name='Ops Filter', stock=6, price='19.00')
+    address = await client.post('/api/v1/customer/addresses', headers=customer_headers, json=address_payload())
+    order = await client.post(
+        '/api/v1/orders',
+        headers=customer_headers,
+        json={
+            'items': [{'product_id': product['id'], 'quantity': 1, 'removed_ingredient_ids': []}],
+            'delivery_address_id': address.json()['id'],
+            'payment_method_code': 'MERCADOPAGO',
+        },
+    )
+    order_id = order.json()['id']
+
+    list_response = await client.get('/api/v1/admin/orders?skip=0&limit=5', headers=admin_headers)
+    assert list_response.status_code == 200
+    assert list_response.json()['total'] >= 1
+
+    pedidos_list = await client.get('/api/v1/admin/orders?skip=0&limit=5', headers=pedidos_headers)
+    assert pedidos_list.status_code == 200
+
+    forbidden_list = await client.get('/api/v1/admin/orders?skip=0&limit=5', headers=customer_headers)
+    assert forbidden_list.status_code == 403
+
+    anon_list = await client.get('/api/v1/admin/orders?skip=0&limit=5')
+    assert anon_list.status_code == 401
+
+    filtered_list = await client.get('/api/v1/admin/orders?state_code=PENDIENTE&skip=0&limit=5', headers=admin_headers)
+    assert filtered_list.status_code == 200
+    assert any(item['id'] == order_id for item in filtered_list.json()['items'])
+
+    detail = await client.get(f'/api/v1/admin/orders/{order_id}', headers=admin_headers)
+    assert detail.status_code == 200
+    detail_payload = detail.json()
+    assert detail_payload['order']['id'] == order_id
+    assert detail_payload['customer']['email'] == 'ops-customer@example.com'
+    assert len(detail_payload['history']) >= 1
+
+    missing_detail = await client.get('/api/v1/admin/orders/999999', headers=admin_headers)
+    assert missing_detail.status_code == 404
+
+    history_before = await fetch_order_history(order_id)
+    detail_again = await client.get(f'/api/v1/admin/orders/{order_id}', headers=admin_headers)
+    assert detail_again.status_code == 200
+    history_after = await fetch_order_history(order_id)
+    assert len(history_after) == len(history_before)
+
+
+@pytest.mark.asyncio
+async def test_operations_transition_rules_and_side_effects(client):
+    admin_headers = await login_admin(client)
+    product = await create_product(client, admin_headers, name='Ops Transition', stock=5, price='13.00')
+    customer = await register_user(client, email='ops-transition@example.com')
+    customer_headers = {'Authorization': f"Bearer {customer.json()['access_token']}"}
+    address = await client.post('/api/v1/customer/addresses', headers=customer_headers, json=address_payload())
+    order = await client.post(
+        '/api/v1/orders',
+        headers=customer_headers,
+        json={
+            'items': [{'product_id': product['id'], 'quantity': 2, 'removed_ingredient_ids': []}],
+            'delivery_address_id': address.json()['id'],
+        },
+    )
+    order_id = order.json()['id']
+
+    ok_transition = await client.post(
+        f'/api/v1/admin/orders/{order_id}/transition',
+        headers=admin_headers,
+        json={'to_state_code': 'CONFIRMADO'},
+    )
+    assert ok_transition.status_code == 200
+    assert ok_transition.json()['order']['state_code'] == 'CONFIRMADO'
+
+    invalid_transition = await client.post(
+        f'/api/v1/admin/orders/{order_id}/transition',
+        headers=admin_headers,
+        json={'to_state_code': 'ENTREGADO'},
+    )
+    assert invalid_transition.status_code == 409
+    assert invalid_transition.json()['code'] == 'ORDER_OPERATION_NOT_ALLOWED'
+
+    history_rows = await fetch_order_history(order_id)
+    assert history_rows[-1].actor_type == 'admin'
+    assert history_rows[-1].source == 'operations'
+    assert history_rows[-1].event_key == f'order:{order_id}:operations:CONFIRMADO'
+    assert len(history_rows) >= 2
+
+    assert await fetch_product_stock(product['id']) == 3
 
 
 @pytest.mark.asyncio

@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from sqlalchemy import select
 
-from app.core.time import utc_now
+from app.core.time import to_utc_iso, utc_now
 from app.core.uow import SqlAlchemyUnitOfWork
 from app.modules.orders.errors import (
     order_delivery_address_not_found,
@@ -15,15 +15,25 @@ from app.modules.orders.errors import (
     order_invalid_customization,
     order_invalid_quantity,
     order_not_found,
+    order_operation_not_allowed,
     order_payment_method_not_found,
     order_product_not_found,
 )
-from app.modules.orders.fsm import ActorType, TransitionRequest, can_transition
+from app.modules.orders.fsm import ALLOWED_TRANSITIONS, TERMINAL_STATES, ActorType, TransitionRequest, can_transition
 from app.modules.orders.model import Order, OrderHistory, OrderItem, OrderState
 from app.modules.orders.schemas import (
+    OperationsOrderCustomerResponse,
+    OperationsOrderDetailResponse,
+    OperationsOrderFilters,
+    OperationsOrderListItemResponse,
+    OperationsOrderListPageResponse,
+    OperationsOrderResponse,
+    OperationsPaymentSummaryResponse,
+    OrderDeliveryAddressResponse,
     OrderCreateRequest,
     OrderDetailResponse,
     OrderHistoryResponse,
+    OrderItemResponse,
     OrderListPageResponse,
     OrderListResponse,
     PaymentSummaryResponse,
@@ -32,6 +42,14 @@ from app.modules.orders.schemas import (
 
 
 class OrderService:
+    def _allowed_actions(self, *, current_state_code: str | None, actor_type: ActorType) -> list[str]:
+        if current_state_code in TERMINAL_STATES:
+            return []
+        targets = ALLOWED_TRANSITIONS.get(current_state_code, {})
+        allowed = [to_code for to_code,
+                   actors in targets.items() if actor_type in actors]
+        return sorted(allowed)
+
     async def _transition_order_in_uow(
         self,
         uow: SqlAlchemyUnitOfWork,
@@ -333,6 +351,61 @@ class OrderService:
                 history=[OrderHistoryResponse.from_model(row, state_map=state_map) for row in history_rows],
             )
 
+    async def list_operations_orders(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        *,
+        filters: OperationsOrderFilters,
+    ) -> OperationsOrderListPageResponse:
+        async with uow:
+            rows = await uow.orders.list_operations_paginated(
+                state_code=filters.state_code,
+                date_from=filters.date_from,
+                date_to=filters.date_to,
+                customer=filters.customer,
+                payment_status_code=filters.payment_status_code,
+                skip=filters.skip,
+                limit=filters.limit,
+            )
+            total = await uow.orders.count_operations(
+                state_code=filters.state_code,
+                date_from=filters.date_from,
+                date_to=filters.date_to,
+                customer=filters.customer,
+                payment_status_code=filters.payment_status_code,
+            )
+            items: list[OperationsOrderListItemResponse] = []
+            for order, state, user, payment, payment_status in rows:
+                items.append(
+                    OperationsOrderListItemResponse(
+                        id=order.id,
+                        order_number=order.order_number,
+                        state_code=state.code,
+                        state=state.name,
+                        customer_name=user.full_name,
+                        customer_email=user.email,
+                        payment_status=payment_status.name if payment_status else None,
+                        payment_status_code=payment_status.code if payment_status else None,
+                        subtotal=f"{order.subtotal:.2f}",
+                        created_at=to_utc_iso(order.created_at),
+                    )
+                )
+            return OperationsOrderListPageResponse(
+                items=items,
+                total=total,
+                skip=filters.skip,
+                limit=filters.limit,
+            )
+
+    async def get_operations_order(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        *,
+        order_id: int,
+    ) -> OperationsOrderDetailResponse:
+        async with uow:
+            return await self._get_operations_order_in_uow(uow, order_id=order_id)
+
     async def list_orders(
         self,
         uow: SqlAlchemyUnitOfWork,
@@ -357,6 +430,127 @@ class OrderService:
                     )
                 )
             return OrderListPageResponse(items=result, total=total, skip=skip, limit=limit)
+
+    async def transition_operations_order(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        *,
+        order_id: int,
+        to_code: str,
+        actor_user_id: int,
+        reason_code: str | None,
+        note: str | None,
+    ) -> OperationsOrderDetailResponse:
+        async with uow:
+            current = await uow.orders.get_by_id(order_id)
+            if current is None:
+                raise order_not_found()
+            current_state = await uow.order_states.get_by_id(current.state_id)
+            allowed_actions = self._allowed_actions(
+                current_state_code=current_state.code if current_state else None,
+                actor_type="admin",
+            )
+            if to_code not in allowed_actions:
+                raise order_operation_not_allowed(action=to_code)
+            await self._transition_order_in_uow(
+                uow,
+                order_id=order_id,
+                to_code=to_code,
+                actor_type="admin",
+                actor_user_id=actor_user_id,
+                source="operations",
+                reason_code=reason_code,
+                note=note,
+                event_key=f"order:{order_id}:operations:{to_code}",
+            )
+            return await self._get_operations_order_in_uow(uow, order_id=order_id)
+
+    async def _get_operations_order_in_uow(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        *,
+        order_id: int,
+    ) -> OperationsOrderDetailResponse:
+        order = await uow.orders.get_by_id(order_id)
+        if order is None:
+            raise order_not_found()
+
+        items = await uow.order_items.list_by_order(order_id=order.id)
+        state = await uow.order_states.get_by_id(order.state_id)
+        payment_method = await uow.payment_methods.get_by_id(order.payment_method_id) if order.payment_method_id else None
+        user = await uow.users.get_by_id(order.user_id)
+        if user is None:
+            raise order_not_found()
+
+        order_response = OperationsOrderResponse(
+            id=order.id,
+            order_number=order.order_number,
+            state_code=state.code if state else "UNKNOWN",
+            state=state.name if state else "UNKNOWN",
+            payment_method=payment_method.name if payment_method else None,
+            subtotal=f"{order.subtotal:.2f}",
+            notes=order.notes,
+            created_at=to_utc_iso(order.created_at),
+            updated_at=to_utc_iso(order.updated_at),
+        )
+
+        state_result = await uow.session.execute(select(OrderState))
+        state_entries = list(state_result.scalars().all())
+        state_map = {entry.id: entry.name for entry in state_entries}
+        history_rows = await uow.order_history.list_by_order(order_id=order.id)
+
+        latest_payment = await uow.payments.get_by_order_id(order.id)
+        payment_summary = None
+        if latest_payment is not None:
+            payment_status = await uow.payment_statuses.get_by_id(latest_payment.status_id)
+            status_code = (
+                payment_status.code if payment_status else "").upper()
+            retry_allowed = status_code in {"PENDING", "REJECTED", "FAILED"} and (
+                state.code if state else "") == "PENDIENTE"
+            payment_summary = OperationsPaymentSummaryResponse(
+                payment_id=latest_payment.id,
+                status=payment_status.name if payment_status else "UNKNOWN",
+                status_code=payment_status.code if payment_status else "UNKNOWN",
+                amount=f"{latest_payment.amount:.2f}",
+                attempts=latest_payment.attempts,
+                failure_reason=latest_payment.failure_reason,
+                retry_allowed=retry_allowed,
+                provider_reference=latest_payment.mp_payment_id or latest_payment.mp_external_reference,
+                last_synced_at=to_utc_iso(latest_payment.updated_at),
+            )
+
+        allowed_actions = self._allowed_actions(
+            current_state_code=state.code if state else None,
+            actor_type="admin",
+        )
+
+        return OperationsOrderDetailResponse(
+            order=order_response,
+            customer=OperationsOrderCustomerResponse(
+                id=user.id,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                full_name=user.full_name,
+                email=user.email,
+            ),
+            delivery_address=OrderDeliveryAddressResponse(
+                recipient_name=order.delivery_recipient_name,
+                phone=order.delivery_phone,
+                street=order.delivery_street,
+                street_number=order.delivery_street_number,
+                floor=order.delivery_floor,
+                apartment=order.delivery_apartment,
+                city=order.delivery_city,
+                province=order.delivery_province,
+                postal_code=order.delivery_postal_code,
+                reference=order.delivery_reference,
+            ),
+            items=[OrderItemResponse.from_model(item) for item in items],
+            payment=payment_summary,
+            history=[OrderHistoryResponse.from_model(
+                row, state_map=state_map) for row in history_rows],
+            allowed_actions=allowed_actions,
+        )
 
     async def _resolve_address(self, uow: SqlAlchemyUnitOfWork, *, user_id: int, delivery_address_id: int | None):
         if delivery_address_id is not None:

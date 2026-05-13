@@ -185,3 +185,77 @@ class OrderListPageResponse(BaseModel):
     total: int
     skip: int
     limit: int
+
+
+class OperationsOrderFilters(BaseModel):
+    model_config = ConfigDict(extra="ignore")
+
+    state_code: str | None = Field(default=None, max_length=50)
+    date_from: datetime | None = None
+    date_to: datetime | None = None
+    customer: str | None = Field(default=None, max_length=160)
+    payment_status_code: str | None = Field(default=None, max_length=50)
+    skip: int = Field(default=0, ge=0)
+    limit: int = Field(default=20, ge=1, le=100)
+
+
+class OperationsOrderListItemResponse(BaseModel):
+    id: int
+    order_number: str
+    state_code: str
+    state: str
+    customer_name: str
+    customer_email: str
+    payment_status: str | None
+    payment_status_code: str | None
+    subtotal: str
+    created_at: str
+
+
+class OperationsOrderListPageResponse(BaseModel):
+    items: list[OperationsOrderListItemResponse]
+    total: int
+    skip: int
+    limit: int
+
+
+class OperationsOrderResponse(BaseModel):
+    id: int
+    order_number: str
+    state_code: str
+    state: str
+    payment_method: str | None
+    subtotal: str
+    notes: str | None
+    created_at: str
+    updated_at: str
+
+
+class OperationsOrderCustomerResponse(BaseModel):
+    id: int
+    first_name: str
+    last_name: str
+    full_name: str
+    email: str
+
+
+class OperationsPaymentSummaryResponse(BaseModel):
+    payment_id: int
+    status: str
+    status_code: str
+    amount: str
+    attempts: int
+    failure_reason: str | None
+    retry_allowed: bool
+    provider_reference: str | None
+    last_synced_at: str | None
+
+
+class OperationsOrderDetailResponse(BaseModel):
+    order: OperationsOrderResponse
+    customer: OperationsOrderCustomerResponse
+    delivery_address: OrderDeliveryAddressResponse
+    items: list[OrderItemResponse]
+    payment: OperationsPaymentSummaryResponse | None
+    history: list[OrderHistoryResponse]
+    allowed_actions: list[str]

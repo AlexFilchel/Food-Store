@@ -13,6 +13,7 @@ import { useCartStore } from '@/shared/stores/cart-store'
 import { useFeedbackStore } from '@/shared/stores/feedback-store'
 import type { AuthUser } from '@/shared/stores/auth-store'
 import { useAuthStore } from '@/shared/stores/auth-store'
+import { orderClient } from '@/entities/order/api/order-client'
 
 vi.mock('@/entities/health/api/get-health', () => ({
   getHealth: () => Promise.resolve({
@@ -84,6 +85,14 @@ vi.mock('@/entities/delivery-addresses/api/delivery-address-client', () => ({
   },
 }))
 
+vi.mock('@/entities/order/api/order-client', () => ({
+  orderClient: {
+    listOperations: vi.fn(),
+    getOperations: vi.fn(),
+    transitionOperations: vi.fn(),
+  },
+}))
+
 const clientUser: AuthUser = {
   id: 1,
   first_name: 'Ada',
@@ -105,6 +114,13 @@ const stockUser: AuthUser = {
   id: 3,
   email: 'stock@example.com',
   roles: ['STOCK'],
+}
+
+const pedidosUser: AuthUser = {
+  ...clientUser,
+  id: 4,
+  email: 'pedidos@example.com',
+  roles: ['PEDIDOS'],
 }
 
 function authProblem(status = 401): AxiosError {
@@ -172,6 +188,43 @@ describe('AppRouter access control', () => {
     vi.restoreAllMocks()
     vi.mocked(customerProfileClient.get).mockResolvedValue(clientUser)
     vi.mocked(deliveryAddressClient.list).mockResolvedValue([])
+    vi.mocked(orderClient.listOperations).mockResolvedValue({ items: [], total: 0, skip: 0, limit: 10 })
+    vi.mocked(orderClient.getOperations).mockResolvedValue({
+      order: {
+        id: 1,
+        order_number: 'ORD-000001',
+        state_code: 'PENDIENTE',
+        state: 'Pendiente',
+        payment_method: null,
+        subtotal: '10.00',
+        notes: null,
+        created_at: '2026-05-12T00:00:00Z',
+        updated_at: '2026-05-12T00:00:00Z',
+      },
+      customer: {
+        id: 1,
+        first_name: 'Ada',
+        last_name: 'Lovelace',
+        full_name: 'Ada Lovelace',
+        email: 'ada@example.com',
+      },
+      delivery_address: {
+        recipient_name: 'Ada Lovelace',
+        phone: '+5491112345678',
+        street: 'Av Siempre Viva',
+        street_number: '742',
+        floor: null,
+        apartment: null,
+        city: 'CABA',
+        province: 'Buenos Aires',
+        postal_code: '1000',
+        reference: null,
+      },
+      items: [],
+      payment: null,
+      history: [],
+      allowed_actions: [],
+    })
   })
 
   it('renders the public home route without requiring an access token', async () => {
@@ -277,13 +330,13 @@ describe('AppRouter access control', () => {
       path: '/app',
       heading: 'Espacio del cliente',
       visible: [/Mi espacio/i, /Mis pedidos/i],
-      hidden: [/Administración/i, /Stock/i],
+      hidden: [/Administración/i, /Stock/i, /Pedidos/i],
     },
     {
       user: adminUser,
       path: '/admin',
       heading: 'Panel de administración',
-      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Stock/i],
+      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Stock/i, /Pedidos/i],
       hidden: [],
     },
     {
@@ -292,6 +345,13 @@ describe('AppRouter access control', () => {
       heading: 'Centro de stock',
       visible: [/Stock/i],
       hidden: [/Mi espacio/i, /Administración/i, /Pedidos/i],
+    },
+    {
+      user: pedidosUser,
+      path: '/admin/orders',
+      heading: 'Pedidos operativos',
+      visible: [/Pedidos/i],
+      hidden: [/Administración/i, /Stock/i, /Mis pedidos/i],
     },
   ])('renders role-aware navigation for $user.roles', async ({ user, path, heading, visible, hidden }) => {
     vi.spyOn(authClient, 'me').mockResolvedValue(user)
@@ -352,6 +412,24 @@ describe('AppRouter access control', () => {
     useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: adminUser })
 
     renderRouter(['/orders'])
+    expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
+  })
+
+  it('routes operations users into the protected orders workspace', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(pedidosUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: pedidosUser })
+
+    renderRouter(['/admin/orders'])
+
+    expect(await screen.findByRole('heading', { name: /Pedidos operativos/i })).toBeInTheDocument()
+  })
+
+  it('blocks customer users from operations routes', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
+
+    renderRouter(['/admin/orders'])
+
     expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
   })
 

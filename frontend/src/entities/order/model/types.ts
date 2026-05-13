@@ -96,3 +96,81 @@ export interface OrderListFilters {
   skip?: number
   limit?: number
 }
+
+export interface OperationsOrderListFilters {
+  state_code?: string
+  date_from?: string
+  date_to?: string
+  customer?: string
+  payment_status_code?: string
+  skip?: number
+  limit?: number
+}
+
+export interface OperationsOrderListItemResponse {
+  id: number
+  order_number: string
+  state_code: string
+  state: string
+  customer_name: string
+  customer_email: string
+  payment_status: string | null
+  payment_status_code: string | null
+  subtotal: string
+  created_at: string
+}
+
+export interface OperationsOrderListPageResponse {
+  items: OperationsOrderListItemResponse[]
+  total: number
+  skip: number
+  limit: number
+}
+
+export interface OperationsOrderCustomerResponse {
+  id: number
+  first_name: string
+  last_name: string
+  full_name: string
+  email: string
+}
+
+export interface OperationsOrderResponse {
+  id: number
+  order_number: string
+  state_code: string
+  state: string
+  payment_method: string | null
+  subtotal: string
+  notes: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface OperationsPaymentSummaryResponse {
+  payment_id: number
+  status: string
+  status_code: string
+  amount: string
+  attempts: number
+  failure_reason: string | null
+  retry_allowed: boolean
+  provider_reference: string | null
+  last_synced_at: string | null
+}
+
+export interface OperationsOrderDetailResponse {
+  order: OperationsOrderResponse
+  customer: OperationsOrderCustomerResponse
+  delivery_address: OrderDeliveryAddressResponse
+  items: OrderItemResponse[]
+  payment: OperationsPaymentSummaryResponse | null
+  history: OrderHistoryResponse[]
+  allowed_actions: string[]
+}
+
+export interface OperationsOrderTransitionRequest {
+  to_state_code: string
+  reason_code?: string | null
+  note?: string | null
+}

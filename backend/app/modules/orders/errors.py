@@ -134,3 +134,13 @@ def order_duplicate_event(*, event_key: str) -> AppError:
         detail=f"Transition event '{event_key}' was already applied.",
         type_path="order-duplicate-event",
     )
+
+
+def order_operation_not_allowed(*, action: str) -> AppError:
+    return AppError(
+        status_code=HTTPStatus.CONFLICT,
+        code="ORDER_OPERATION_NOT_ALLOWED",
+        title="Operation Not Allowed",
+        detail=f"Operation '{action}' is not allowed for this order.",
+        type_path="order-operation-not-allowed",
+    )

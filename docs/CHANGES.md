@@ -117,7 +117,7 @@ Archive con specs sincronizadas
 | 16 | `operations-order-management` | Implementa la vista operativa de pedidos para admin/gestor, incluyendo visualización global y soporte a la gestión diaria. | US-051, US-052, US-065 | `order-fsm-and-audit-trail`, `frontend-shell-access-control`, `auth-rbac-core` | Necesita trazabilidad, permisos por rol y panel protegido para operar. |
 | 17 | `user-administration` | Permite listar, editar, desactivar usuarios y asignar roles desde administración. | US-053, US-054, US-055 | `auth-rbac-core`, `frontend-shell-access-control` | Requiere RBAC firme y UI administrativa protegida. |
 | 18 | `admin-dashboard-metrics` | Implementa dashboard administrativo con métricas generales, ventas por período, top productos y pedidos por estado. | US-056, US-057, US-058, US-059 | `operations-order-management`, `mercadopago-payment-flow`, `product-catalog-management` | Depende de datos reales y consistentes de catálogo, pedidos y pagos. |
-| 19 | `system-configuration` | Expone la configuración global del sistema para parámetros operativos y catálogos administrables. | US-060 | `auth-rbac-core`, `operations-order-management`, `admin-dashboard-metrics` | Conviene implementarlo al final, cuando ya están claros los parámetros realmente necesarios y el dominio está estabilizado. |
+| 19 | `system-configuration` | Expone la configuración global del sistema para parámetros operativos y catálogos administrables. | US-060 | `auth-rbac-core`, `operations-order-management`, `admin-dashboard-metrics` | Conviene implementarlo al final, cuando ya están claros los parámetros realmente necesarios y el dominio está estabilizado. |  
 
 ---
 

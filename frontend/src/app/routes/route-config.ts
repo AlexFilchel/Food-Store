@@ -9,6 +9,8 @@ export const routePaths = {
   adminCategories: '/admin/categories',
   adminIngredients: '/admin/ingredients',
   adminProducts: '/admin/products',
+  adminOrders: '/admin/orders',
+  adminOrderDetail: '/admin/orders/:orderId',
   stock: '/stock',
   orders: '/orders',
   orderDetail: '/orders/:orderId',
@@ -67,6 +69,13 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     exact: true,
   },
   {
+    to: routePaths.adminOrders,
+    label: 'Pedidos',
+    description: 'Gestión operativa de pedidos y seguimiento del flujo.',
+    allowedRoles: ['ADMIN', 'PEDIDOS'],
+    exact: true,
+  },
+  {
     to: routePaths.orders,
     label: 'Mis pedidos',
     description: 'Seguimiento de tus pedidos como cliente.',
@@ -94,7 +103,7 @@ export function getDefaultAuthenticatedPath(userRoles: readonly string[]) {
   }
 
   if (userRoles.includes('PEDIDOS')) {
-    return routePaths.orders
+    return routePaths.adminOrders
   }
 
   return routePaths.app
