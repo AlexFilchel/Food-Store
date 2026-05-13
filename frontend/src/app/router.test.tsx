@@ -14,6 +14,7 @@ import { useFeedbackStore } from '@/shared/stores/feedback-store'
 import type { AuthUser } from '@/shared/stores/auth-store'
 import { useAuthStore } from '@/shared/stores/auth-store'
 import { orderClient } from '@/entities/order/api/order-client'
+import { userAdminClient } from '@/entities/user-administration/api/user-admin-client'
 
 vi.mock('@/entities/health/api/get-health', () => ({
   getHealth: () => Promise.resolve({
@@ -90,6 +91,18 @@ vi.mock('@/entities/order/api/order-client', () => ({
     listOperations: vi.fn(),
     getOperations: vi.fn(),
     transitionOperations: vi.fn(),
+  },
+}))
+
+vi.mock('@/entities/user-administration/api/user-admin-client', () => ({
+  userAdminClient: {
+    list: vi.fn(),
+    detail: vi.fn(),
+    create: vi.fn(),
+    update: vi.fn(),
+    replaceRoles: vi.fn(),
+    updateLifecycle: vi.fn(),
+    resetPassword: vi.fn(),
   },
 }))
 
@@ -225,6 +238,19 @@ describe('AppRouter access control', () => {
       history: [],
       allowed_actions: [],
     })
+    vi.mocked(userAdminClient.list).mockResolvedValue({ items: [], total: 0, page: 1, size: 20, pages: 0 })
+    vi.mocked(userAdminClient.detail).mockResolvedValue({
+      id: 10,
+      first_name: 'User',
+      last_name: 'Admin',
+      full_name: 'User Admin',
+      email: 'user-admin@example.com',
+      is_active: true,
+      roles: ['ADMIN'],
+      created_at: '2026-05-12T00:00:00Z',
+      updated_at: '2026-05-12T00:00:00Z',
+      deleted_at: null,
+    })
   })
 
   it('renders the public home route without requiring an access token', async () => {
@@ -336,7 +362,7 @@ describe('AppRouter access control', () => {
       user: adminUser,
       path: '/admin',
       heading: 'Panel de administración',
-      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Stock/i, /Pedidos/i],
+      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Usuarios/i, /Stock/i, /Pedidos/i],
       hidden: [],
     },
     {
@@ -413,6 +439,33 @@ describe('AppRouter access control', () => {
 
     renderRouter(['/orders'])
     expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
+  })
+
+  it('blocks non-admin users from the user administration route', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
+
+    renderRouter(['/admin/users'])
+
+    expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
+  })
+
+  it('allows admin users to access user administration routes', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(adminUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: adminUser })
+
+    renderRouter(['/admin/users'])
+
+    expect(await screen.findByRole('heading', { name: 'Administración de usuarios' })).toBeInTheDocument()
+  })
+
+  it('allows admin users to access user detail route', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(adminUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: adminUser })
+
+    renderRouter(['/admin/users/10'])
+
+    expect(await screen.findByRole('heading', { name: /User Admin/i })).toBeInTheDocument()
   })
 
   it('routes operations users into the protected orders workspace', async () => {

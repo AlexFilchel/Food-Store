@@ -88,6 +88,14 @@
       "sessions": 1,
       "memories": 2,
       "prompts": 1
+    },
+    {
+      "id": "c084daca",
+      "created_by": "Gian",
+      "created_at": "2026-05-13T14:29:14Z",
+      "sessions": 1,
+      "memories": 0,
+      "prompts": 6
     }
   ]
 }

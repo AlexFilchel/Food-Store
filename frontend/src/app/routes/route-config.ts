@@ -9,6 +9,8 @@ export const routePaths = {
   adminCategories: '/admin/categories',
   adminIngredients: '/admin/ingredients',
   adminProducts: '/admin/products',
+  adminUsers: '/admin/users',
+  adminUserDetail: '/admin/users/:userId',
   adminOrders: '/admin/orders',
   adminOrderDetail: '/admin/orders/:orderId',
   stock: '/stock',
@@ -59,6 +61,12 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     to: routePaths.adminProducts,
     label: 'Productos',
     description: 'Administración de productos y composición.',
+    allowedRoles: ['ADMIN'],
+  },
+  {
+    to: routePaths.adminUsers,
+    label: 'Usuarios',
+    description: 'Administración de usuarios y roles.',
     allowedRoles: ['ADMIN'],
   },
   {
