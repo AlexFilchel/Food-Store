@@ -25,6 +25,7 @@ Usá **solo** las skills instaladas localmente en `.agents/skills/`.
 | `typescript-advanced-types` | Cuando haya lógica de tipos compleja en TypeScript: generics, conditional types, mapped types, utility types o búsqueda de type safety avanzada. |
 | `vite` | Cuando la tarea involucre configuración de Vite, `vite.config`, plugins, SSR, librerías o build tooling con Vite. |
 | `tailwind-design-system` | Cuando haya que construir o estandarizar UI con Tailwind, design tokens, librerías de componentes o patrones responsive reutilizables. |
+| `dashboard-crud-page` | Cuando haya que crear páginas CRUD en `Dashboard/src/pages/` con tabla, modal de formulario, confirmación de borrado, hooks estándar y patrones UI consistentes del dashboard. |
 | `supabase-postgres-best-practices` | Cuando haya que diseñar schemas Postgres, optimizar queries, índices, locking, performance o configuraciones de base de datos. |
 | `tanstack-query-best-practices` | Cuando se implemente o revise server state con TanStack Query: queries, mutations, invalidación, caching, prefetching o hydration. |
 
@@ -35,6 +36,8 @@ Usá **solo** las skills instaladas localmente en `.agents/skills/`.
 - **Frontend React**: combinar `vercel-react-best-practices` + `typescript-advanced-types`.
 - **Frontend React con server state**: agregar `tanstack-query-best-practices`.
 - **Frontend UI**: agregar `tailwind-design-system`.
+- **Dashboard CRUD React**: combinar `vercel-react-best-practices` + `typescript-advanced-types` + `tailwind-design-system` + `dashboard-crud-page`.
+- **Dashboard CRUD React con server state**: agregar `tanstack-query-best-practices`.
 - **Tooling frontend**: agregar `vite`.
 - **Diseño de arquitectura de módulos**: priorizar `architecture-patterns`.
 - **Documentación de API en Swagger 2.0**: usar `openapi-specification-v2`.

@@ -6,6 +6,7 @@ export const routePaths = {
   register: '/register',
   app: '/app',
   admin: '/admin',
+  adminMetrics: '/admin/metrics',
   adminCategories: '/admin/categories',
   adminIngredients: '/admin/ingredients',
   adminProducts: '/admin/products',
@@ -44,6 +45,12 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     description: 'Panel operativo para administración general.',
     allowedRoles: ['ADMIN'],
     exact: true,
+  },
+  {
+    to: routePaths.adminMetrics,
+    label: 'Métricas',
+    description: 'Dashboard de métricas administrativas del negocio.',
+    allowedRoles: ['ADMIN'],
   },
   {
     to: routePaths.adminCategories,

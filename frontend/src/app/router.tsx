@@ -17,6 +17,7 @@ import { SessionBootstrapBoundary } from '@/features/auth/ui/session-bootstrap-b
 import { AccessDeniedPage } from '@/pages/access-denied-page/ui/access-denied-page'
 import { AdminCategoriesPage } from '@/pages/admin-categories-page/ui/admin-categories-page'
 import { AdminIngredientsPage } from '@/pages/admin-ingredients-page/ui/admin-ingredients-page'
+import { AdminDashboardMetricsPage } from '@/pages/admin-dashboard-metrics-page/ui/admin-dashboard-metrics-page'
 import { AdminPage } from '@/pages/admin-page/ui/admin-page'
 import { AdminProductsPage } from '@/pages/admin-products-page/ui/admin-products-page'
 import { AdminUsersPage } from '@/pages/admin-users-page/ui/admin-users-page'
@@ -84,6 +85,7 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
         >
           <Route path={routePaths.app} element={<AppPage />} />
           <Route path={routePaths.admin} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminPage /></ProtectedByRole>} />
+          <Route path={routePaths.adminMetrics} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminDashboardMetricsPage /></ProtectedByRole>} />
           <Route path={routePaths.adminCategories} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminCategoriesPage /></ProtectedByRole>} />
           <Route path={routePaths.adminIngredients} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminIngredientsPage /></ProtectedByRole>} />
           <Route path={routePaths.adminProducts} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminProductsPage /></ProtectedByRole>} />

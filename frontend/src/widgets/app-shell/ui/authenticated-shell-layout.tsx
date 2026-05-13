@@ -1,5 +1,4 @@
-import { useEffect } from 'react'
-import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet } from 'react-router-dom'
 
 import { getNavigationForRoles, routePaths } from '@/app/routes/route-config'
 import { LogoutButton } from '@/features/auth/ui/logout-button'
@@ -10,14 +9,9 @@ import { useUiStore } from '@/shared/stores/ui-store'
 export function AuthenticatedShellLayout() {
   const user = useAuthStore((state) => state.user)
   const sidebarOpen = useUiStore((state) => state.sidebarOpen)
-  const setSidebarOpen = useUiStore((state) => state.setSidebarOpen)
   const toggleSidebar = useUiStore((state) => state.toggleSidebar)
   const navigation = getNavigationForRoles(user?.roles ?? [])
-  const location = useLocation()
-
-  useEffect(() => {
-    setSidebarOpen(false)
-  }, [location.pathname, setSidebarOpen])
+  const desktopSidebarExpanded = sidebarOpen
 
   return (
     <div className="min-h-screen bg-slate-100 text-slate-950">
@@ -51,10 +45,25 @@ export function AuthenticatedShellLayout() {
         </div>
       </header>
 
-      <div className="mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[260px_minmax(0,1fr)] lg:px-8">
+      <div
+        className={cn(
+          'mx-auto grid max-w-7xl gap-6 px-4 py-6 sm:px-6 lg:px-8',
+          desktopSidebarExpanded ? 'lg:grid-cols-[260px_minmax(0,1fr)]' : 'lg:grid-cols-[84px_minmax(0,1fr)]',
+        )}
+      >
         <aside className="hidden lg:block">
-          <nav aria-label="Navegación principal" className="sticky top-24 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-            <NavigationList navigation={navigation} />
+          <nav aria-label="Navegación principal" className="sticky top-24 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
+            <button
+              aria-label={desktopSidebarExpanded ? 'Contraer menú lateral' : 'Expandir menú lateral'}
+              aria-pressed={desktopSidebarExpanded}
+              className="mb-4 inline-flex h-10 w-full items-center justify-center rounded-lg border border-slate-300 text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
+              onClick={toggleSidebar}
+              type="button"
+            >
+              <span aria-hidden="true" className="text-base leading-none">☰</span>
+            </button>
+
+            <NavigationList navigation={navigation} compact={!desktopSidebarExpanded} />
           </nav>
         </aside>
 
@@ -66,7 +75,7 @@ export function AuthenticatedShellLayout() {
               id="mobile-navigation"
             >
               <UserSummary className="mb-4 flex md:hidden" />
-              <NavigationList navigation={navigation} />
+              <NavigationList navigation={navigation} compact={false} />
               <LogoutButton className="mt-4 inline-flex w-full items-center justify-center rounded-md border border-slate-300 px-4 py-3 text-sm font-semibold text-slate-700" />
             </nav>
           </div>
@@ -82,17 +91,20 @@ export function AuthenticatedShellLayout() {
 
 interface NavigationListProps {
   navigation: ReturnType<typeof getNavigationForRoles>
+  compact: boolean
 }
 
-function NavigationList({ navigation }: NavigationListProps) {
+function NavigationList({ navigation, compact }: NavigationListProps) {
   return (
     <ul className="space-y-2">
       {navigation.map((item) => (
         <li key={item.to}>
           <NavLink
+            aria-label={item.label}
             className={({ isActive }) =>
               cn(
-                'block rounded-lg border px-4 py-3 transition focus:outline-none focus:ring-2 focus:ring-sky-300',
+                'block rounded-lg border transition focus:outline-none focus:ring-2 focus:ring-sky-300',
+                compact ? 'px-2 py-2.5' : 'px-4 py-3',
                 isActive
                   ? 'border-sky-200 bg-sky-50 text-sky-900'
                   : 'border-slate-200/70 bg-slate-50 text-slate-700 hover:border-slate-300 hover:bg-white',
@@ -101,13 +113,49 @@ function NavigationList({ navigation }: NavigationListProps) {
             end={item.exact}
             to={item.to}
           >
-            <span className="block text-sm font-semibold">{item.label}</span>
-            <span className="mt-1 block text-sm text-slate-500">{item.description}</span>
+            <div className={cn('flex items-center', compact ? 'justify-center' : 'gap-3')}>
+              <span className="inline-flex size-5 items-center justify-center" aria-hidden="true">
+                <NavigationIcon to={item.to} />
+              </span>
+              {!compact ? <span className="block text-sm font-semibold">{item.label}</span> : null}
+            </div>
+            {!compact ? <span className="mt-1 block text-sm text-slate-500">{item.description}</span> : null}
           </NavLink>
         </li>
       ))}
     </ul>
   )
+}
+
+function NavigationIcon({ to }: { to: string }) {
+  const icon = (() => {
+    switch (to) {
+      case routePaths.app:
+        return '🏠'
+      case routePaths.admin:
+        return '🧭'
+      case routePaths.adminMetrics:
+        return '📈'
+      case routePaths.adminCategories:
+        return '🗂️'
+      case routePaths.adminIngredients:
+        return '🥗'
+      case routePaths.adminProducts:
+        return '📦'
+      case routePaths.adminUsers:
+        return '👥'
+      case routePaths.stock:
+        return '🛒'
+      case routePaths.adminOrders:
+        return '📋'
+      case routePaths.orders:
+        return '🧾'
+      default:
+        return '•'
+    }
+  })()
+
+  return <span className="text-base leading-none">{icon}</span>
 }
 
 function UserSummary({ className }: { className?: string }) {

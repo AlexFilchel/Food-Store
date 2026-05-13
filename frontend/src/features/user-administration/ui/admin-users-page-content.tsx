@@ -18,10 +18,6 @@ function statusLabel(isActive: boolean) {
   return isActive ? 'Activo' : 'Inactivo'
 }
 
-function statusBadgeClass(isActive: boolean) {
-  return isActive ? 'bg-emerald-100 text-emerald-900' : 'bg-rose-100 text-rose-900'
-}
-
 export function AdminUsersPageContent() {
   const [search, setSearch] = useState('')
   const [role, setRole] = useState<UserRoleCode | 'ALL'>('ALL')
@@ -57,7 +53,7 @@ export function AdminUsersPageContent() {
   const isForbidden = problem?.status === 403
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <header className="space-y-2">
         <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">ADMIN</span>
         <h2 className="mt-4 text-3xl font-semibold text-slate-950">Administración de usuarios</h2>
@@ -66,7 +62,7 @@ export function AdminUsersPageContent() {
         </p>
       </header>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 p-5">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <div className="space-y-2">
             <label className="text-sm text-slate-700" htmlFor="admin-user-search">Buscar</label>
@@ -78,7 +74,7 @@ export function AdminUsersPageContent() {
                 setPage(1)
               }}
               placeholder="Nombre, apellido o email"
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
             />
           </div>
           <div className="space-y-2">
@@ -90,7 +86,7 @@ export function AdminUsersPageContent() {
                 setRole(event.target.value as UserRoleCode | 'ALL')
                 setPage(1)
               }}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
             >
               {ROLE_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -108,7 +104,7 @@ export function AdminUsersPageContent() {
                 setStatus(event.target.value as 'all' | 'active' | 'inactive')
                 setPage(1)
               }}
-              className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
             >
               <option value="all">Todos</option>
               <option value="active">Activos</option>
@@ -116,27 +112,27 @@ export function AdminUsersPageContent() {
             </select>
           </div>
           <div className="flex items-end">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
+            <div className="rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-600">
               Total: <span className="font-semibold text-slate-900">{total}</span>
             </div>
           </div>
         </div>
-      </div>
+      </article>
 
-      <div className="rounded-3xl border border-slate-200 bg-white p-4">
+      <article className="rounded-lg border border-slate-200 p-5">
         <h3 className="text-lg font-semibold text-slate-950">Crear usuario</h3>
         <p className="mt-1 text-sm text-slate-600">Generá nuevos usuarios desde administración.</p>
         <AdminUserCreateForm />
-      </div>
+      </article>
 
       {query.isLoading ? (
-        <div className="rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
+        <div className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
           <p className="text-slate-600">Cargando usuarios...</p>
         </div>
       ) : null}
 
       {query.isError ? (
-        <div className="rounded-3xl border border-dashed border-rose-300 bg-white p-8 text-center">
+        <div className="rounded-lg border border-dashed border-rose-300 bg-rose-50/40 p-8 text-center">
           <p className="text-rose-700">
             {isForbidden
               ? 'No tenés permisos para acceder a la administración de usuarios.'
@@ -146,22 +142,35 @@ export function AdminUsersPageContent() {
       ) : null}
 
       {!query.isLoading && !query.isError && users.length === 0 ? (
-        <div className="space-y-2 rounded-3xl border border-dashed border-slate-300 bg-white p-8 text-center">
+        <div className="space-y-2 rounded-lg border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
           <h3 className="text-lg font-semibold text-slate-900">No hay usuarios para mostrar</h3>
           <p className="text-sm text-slate-600">Probá ajustar los filtros o revisá más tarde.</p>
         </div>
       ) : null}
 
       {!query.isLoading && !query.isError && users.length > 0 ? (
-        <div className="space-y-4">
-          {users.map((user) => (
-            <AdminUserCard key={user.id} user={user} />
-          ))}
+        <div className="h-[430px] overflow-auto rounded-lg border border-slate-200">
+          <table className="min-w-[980px] w-full text-sm">
+            <thead className="sticky top-0 z-10 bg-slate-50 text-center text-xs font-semibold uppercase tracking-wide text-slate-600">
+              <tr>
+                <th className="border-r border-slate-200/70 px-4 py-3">Nombre</th>
+                <th className="w-32 border-r border-slate-200/70 px-2 py-3">Estado</th>
+                <th className="w-64 border-r border-slate-200/70 px-4 py-3">Roles</th>
+                <th className="w-32 border-r border-slate-200/70 px-2 py-3">Alta</th>
+                <th className="w-44 px-2 py-3">Acciones</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users.map((user) => (
+                <AdminUserRow key={user.id} user={user} />
+              ))}
+            </tbody>
+          </table>
         </div>
       ) : null}
 
       {!query.isLoading && !query.isError && users.length > 0 ? (
-        <div className="flex items-center justify-between rounded-2xl bg-slate-50 px-4 py-3 text-sm text-slate-700">
+        <div className="flex items-center justify-between rounded-lg bg-slate-50 px-4 py-3 text-sm text-slate-700">
           <p>
             Página {page} / {totalPages}
           </p>
@@ -189,38 +198,41 @@ export function AdminUsersPageContent() {
   )
 }
 
-function AdminUserCard({ user }: { user: AdminUserSummary }) {
+function AdminUserRow({ user }: { user: AdminUserSummary }) {
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-        <div className="space-y-1">
-          <p className="text-lg font-semibold text-slate-950">
-            {user.first_name} {user.last_name}
-          </p>
-          <p className="text-sm text-slate-600">{user.email}</p>
-          <p className="text-xs text-slate-500">Alta: {new Date(user.created_at).toLocaleDateString('es-AR')}</p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {user.roles.map((role) => (
-              <span key={role} className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-700">
-                {role}
-              </span>
-            ))}
-          </div>
+    <tr className="border-t border-slate-200 align-top">
+      <td className="border-r border-slate-200/60 px-4 py-3">
+        <p className="font-semibold text-slate-950">
+          {user.first_name} {user.last_name}
+        </p>
+        <p className="text-xs text-slate-500">{user.email}</p>
+      </td>
+      <td className={`border-r border-slate-200/60 px-2 py-3 text-center align-middle font-medium text-slate-950 ${user.is_active ? 'bg-emerald-100/80' : 'bg-rose-200/80'}`}>
+        {statusLabel(user.is_active)}
+      </td>
+      <td className="border-r border-slate-200/60 px-4 py-3 align-middle text-center">
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          {user.roles.map((role) => (
+            <span key={role} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+              {role}
+            </span>
+          ))}
         </div>
-
-        <div className="flex flex-col items-start gap-3 sm:items-end">
-          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${statusBadgeClass(user.is_active)}`}>
-            {statusLabel(user.is_active)}
-          </span>
+      </td>
+      <td className="border-r border-slate-200/60 px-2 py-3 text-center align-middle text-xs text-slate-600">
+        {new Date(user.created_at).toLocaleDateString('es-AR')}
+      </td>
+      <td className="px-2 py-3 align-middle">
+        <div className="flex items-center justify-center gap-2">
           <Link
-            className="inline-flex rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+            className="inline-flex rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50"
             to={routePaths.adminUserDetail.replace(':userId', String(user.id))}
           >
             Ver detalle
           </Link>
         </div>
-      </div>
-    </article>
+      </td>
+    </tr>
   )
 }
 
@@ -265,7 +277,7 @@ function AdminUserCreateForm() {
       <label className="space-y-2">
         <span className="text-sm text-slate-700">Nombre</span>
         <input
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
           value={form.first_name}
           onChange={(event) => setForm((current) => ({ ...current, first_name: event.target.value }))}
         />
@@ -274,7 +286,7 @@ function AdminUserCreateForm() {
       <label className="space-y-2">
         <span className="text-sm text-slate-700">Apellido</span>
         <input
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
           value={form.last_name}
           onChange={(event) => setForm((current) => ({ ...current, last_name: event.target.value }))}
         />
@@ -283,7 +295,7 @@ function AdminUserCreateForm() {
       <label className="space-y-2">
         <span className="text-sm text-slate-700">Email</span>
         <input
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
           value={form.email}
           onChange={(event) => setForm((current) => ({ ...current, email: event.target.value }))}
         />
@@ -292,7 +304,7 @@ function AdminUserCreateForm() {
       <label className="space-y-2">
         <span className="text-sm text-slate-700">Contraseña</span>
         <input
-          className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm"
+          className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm"
           type="password"
           value={form.password}
           onChange={(event) => setForm((current) => ({ ...current, password: event.target.value }))}
@@ -305,7 +317,7 @@ function AdminUserCreateForm() {
           {ROLE_OPTIONS.filter((option) => option.value !== 'ALL').map((option) => (
             <label
               key={option.value}
-              className={`flex items-center gap-2 rounded-xl border px-3 py-2 text-sm ${
+              className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${
                 roles.includes(option.value as UserRoleCode)
                   ? 'border-sky-300 bg-sky-50 text-sky-900'
                   : 'border-slate-200 text-slate-700'
@@ -323,7 +335,7 @@ function AdminUserCreateForm() {
         </div>
         {fieldErrors.role_codes ? <span className="text-xs text-rose-600">{fieldErrors.role_codes}</span> : null}
       </div>
-      <label className="inline-flex items-center gap-2 rounded-xl border border-slate-200 px-3 py-2 text-sm text-slate-700">
+      <label className="inline-flex items-center gap-2 rounded-lg border border-slate-200 px-3 py-2 text-sm text-slate-700">
         <input
           type="checkbox"
           className="size-4 rounded border-slate-300"
@@ -334,7 +346,7 @@ function AdminUserCreateForm() {
       </label>
       <div className="md:col-span-2">
         <button
-          className="inline-flex rounded-xl bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="inline-flex rounded-lg bg-slate-950 px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
           type="submit"
           disabled={createMutation.isPending || roles.length === 0}
         >

@@ -68,7 +68,7 @@ class UserRepository(BaseRepository[User]):
                 .join(Role, Role.id == UserRole.role_id)
                 .where(Role.code == role_code)
             )
-        statement = statement.distinct(User.id).order_by(User.created_at.desc(), User.id.desc())
+        statement = statement.distinct(User.id).order_by(User.id.desc(), User.created_at.desc())
         result = await self.session.execute(statement.offset(page_params.offset).limit(page_params.size))
         return list(result.scalars().all())
 

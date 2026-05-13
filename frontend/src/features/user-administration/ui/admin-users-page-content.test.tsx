@@ -93,15 +93,15 @@ describe('AdminUsersPageContent', () => {
       </MemoryRouter>,
     )
 
-    const card = screen.getByText('Ada Lovelace').closest('article')
-    expect(card).not.toBeNull()
-    if (!card) {
+    const row = screen.getByText('Ada Lovelace').closest('tr')
+    expect(row).not.toBeNull()
+    if (!row) {
       return
     }
 
-    expect(within(card).getByText('Ada Lovelace')).toBeInTheDocument()
-    expect(within(card).getByText('ada@example.com')).toBeInTheDocument()
-    expect(within(card).getByText('ADMIN')).toBeInTheDocument()
+    expect(within(row).getByText('Ada Lovelace')).toBeInTheDocument()
+    expect(within(row).getByText('ada@example.com')).toBeInTheDocument()
+    expect(within(row).getByText('ADMIN')).toBeInTheDocument()
   })
 
   it('submits create user form and invalidates query', async () => {

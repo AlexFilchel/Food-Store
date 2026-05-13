@@ -10,6 +10,9 @@ export function AdminPage() {
         Este espacio queda reservado para orquestación general, métricas operativas y módulos administrativos. La primera capacidad operativa ya vive en categorías.
       </p>
       <div className="mt-6">
+        <Link className="inline-flex rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white" to={routePaths.adminMetrics}>
+          Ir a dashboard de métricas
+        </Link>
         <Link className="inline-flex rounded-md bg-slate-950 px-4 py-2 text-sm font-semibold text-white" to={routePaths.adminCategories}>
           Ir a gestión de categorías
         </Link>

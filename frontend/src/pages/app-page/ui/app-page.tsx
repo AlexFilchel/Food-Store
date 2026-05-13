@@ -136,7 +136,7 @@ export function AppPage() {
   }, [profileQuery.data])
 
   if (profileQuery.isLoading) {
-    return <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">Cargando perfil...</section>
+    return <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">Cargando perfil...</section>
   }
 
   async function handleProfileSubmit(event: FormEvent<HTMLFormElement>) {
@@ -186,8 +186,8 @@ export function AppPage() {
   }
 
   return (
-    <section className="space-y-6">
-      <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+    <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <article className="rounded-lg border border-slate-200 p-5">
         <div>
           <span className="inline-flex rounded-full bg-sky-100 px-3 py-1 text-sm font-semibold text-sky-900">CLIENT</span>
           <h2 className="mt-4 text-3xl font-semibold text-slate-950">Espacio del cliente</h2>
@@ -195,7 +195,7 @@ export function AppPage() {
         </div>
       </article>
 
-      <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+      <article className="rounded-lg border border-slate-200 p-5">
         <h3 className="text-xl font-semibold text-slate-950">Mis direcciones de entrega</h3>
         {addressListQuery.isLoading ? <p className="mt-2 text-sm text-slate-600">Cargando direcciones...</p> : null}
         {addressListQuery.error ? <p role="alert" className="mt-2 text-sm text-rose-700">{getErrorMessage(addressListQuery.error)}</p> : null}
@@ -203,12 +203,12 @@ export function AppPage() {
           <p className="mt-2 text-sm text-slate-600">Todavía no tenés direcciones guardadas.</p>
         ) : null}
         {addressListQuery.data?.map((address) => (
-          <div className="mt-3 rounded-xl border border-slate-200 p-4" key={address.id}>
+          <div className="mt-3 rounded-lg border border-slate-200 p-4" key={address.id}>
             <p className="font-semibold text-slate-900">{address.recipient_name}</p>
             <p className="text-sm text-slate-700">{address.street} {address.street_number}, {address.city}</p>
             {address.is_default ? <span className="mt-2 inline-flex rounded bg-emerald-100 px-2 py-1 text-xs font-semibold text-emerald-800">Predeterminada</span> : null}
             <div className="mt-3 flex flex-wrap gap-2">
-              <button className="rounded border px-3 py-1 text-sm" type="button" onClick={() => {
+              <button className="rounded-lg border border-slate-300 px-3 py-1 text-sm" type="button" onClick={() => {
                 resetAddressMutationFeedback()
                 setProvinceSelectionError(null)
                 setIsProvinceSelected(true)
@@ -228,9 +228,9 @@ export function AppPage() {
                   is_default: address.is_default,
                 })
               }}>Editar</button>
-              <button className="rounded border px-3 py-1 text-sm" disabled={deleteAddressMutation.isPending} type="button" onClick={() => void deleteAddressMutation.mutateAsync(address.id)}>Eliminar</button>
+              <button className="rounded-lg border border-slate-300 px-3 py-1 text-sm" disabled={deleteAddressMutation.isPending} type="button" onClick={() => void deleteAddressMutation.mutateAsync(address.id)}>Eliminar</button>
               {!address.is_default ? (
-                <button className="rounded border px-3 py-1 text-sm" disabled={setDefaultAddressMutation.isPending} type="button" onClick={() => void setDefaultAddressMutation.mutateAsync(address.id)}>Marcar como predeterminada</button>
+                <button className="rounded-lg border border-slate-300 px-3 py-1 text-sm" disabled={setDefaultAddressMutation.isPending} type="button" onClick={() => void setDefaultAddressMutation.mutateAsync(address.id)}>Marcar como predeterminada</button>
               ) : null}
             </div>
           </div>
@@ -273,36 +273,36 @@ export function AppPage() {
             Usar como dirección predeterminada
           </label>
           <div className="md:col-span-2 flex gap-2">
-            <button className="rounded bg-slate-900 px-4 py-2 text-white" disabled={createAddressMutation.isPending || updateAddressMutation.isPending} type="submit">
+            <button className="rounded-lg bg-slate-900 px-4 py-2 text-white" disabled={createAddressMutation.isPending || updateAddressMutation.isPending} type="submit">
               {editingAddressId ? 'Guardar cambios' : 'Agregar dirección'}
             </button>
-            {editingAddressId ? <button className="rounded border px-4 py-2" type="button" onClick={() => { resetAddressMutationFeedback(); resetAddressForm() }}>Cancelar edición</button> : null}
+            {editingAddressId ? <button className="rounded-lg border border-slate-300 px-4 py-2" type="button" onClick={() => { resetAddressMutationFeedback(); resetAddressForm() }}>Cancelar edición</button> : null}
           </div>
         </form>
       </article>
 
-      <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+      <article className="rounded-lg border border-slate-200 p-5">
         <h3 className="text-xl font-semibold text-slate-950">Mi perfil</h3>
         {updateMutation.isSuccess ? <p className="mt-2 text-sm text-emerald-700">Perfil actualizado correctamente.</p> : null}
         {updateMutation.error ? <p role="alert" className="mt-2 text-sm text-rose-700">{getErrorMessage(updateMutation.error)}</p> : null}
         <form className="mt-4 space-y-3" onSubmit={(event) => void handleProfileSubmit(event)}>
           <label className="block text-sm">Nombre
-            <input aria-label="Nombre" className="mt-1 w-full rounded border px-3 py-2" value={firstName} onChange={(event) => setFirstName(event.target.value)} />
+            <input aria-label="Nombre" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" value={firstName} onChange={(event) => setFirstName(event.target.value)} />
             {fieldErrors.first_name ? <span className="text-xs text-rose-700">{fieldErrors.first_name}</span> : null}
           </label>
           <label className="block text-sm">Apellido
-            <input aria-label="Apellido" className="mt-1 w-full rounded border px-3 py-2" value={lastName} onChange={(event) => setLastName(event.target.value)} />
+            <input aria-label="Apellido" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" value={lastName} onChange={(event) => setLastName(event.target.value)} />
             {fieldErrors.last_name ? <span className="text-xs text-rose-700">{fieldErrors.last_name}</span> : null}
           </label>
           <label className="block text-sm">Email
-            <input aria-label="Email" className="mt-1 w-full rounded border px-3 py-2" value={email} onChange={(event) => setEmail(event.target.value)} />
+            <input aria-label="Email" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" value={email} onChange={(event) => setEmail(event.target.value)} />
             {fieldErrors.email ? <span className="text-xs text-rose-700">{fieldErrors.email}</span> : null}
           </label>
-          <button className="rounded bg-slate-900 px-4 py-2 text-white" disabled={updateMutation.isPending} type="submit">Guardar perfil</button>
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-white" disabled={updateMutation.isPending} type="submit">Guardar perfil</button>
         </form>
       </article>
 
-      <article className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+      <article className="rounded-lg border border-slate-200 p-5">
         <h3 className="text-xl font-semibold text-slate-950">Cambiar contraseña</h3>
         {passwordMutation.isSuccess ? <p className="mt-2 text-sm text-emerald-700">Contraseña actualizada correctamente.</p> : null}
         {passwordMutation.error ? (
@@ -310,17 +310,17 @@ export function AppPage() {
         ) : null}
         <form className="mt-4 space-y-3" onSubmit={(event) => void handlePasswordSubmit(event)}>
           <label className="block text-sm">Contraseña actual
-            <input aria-label="Contraseña actual" className="mt-1 w-full rounded border px-3 py-2" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
+            <input aria-label="Contraseña actual" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" type="password" value={currentPassword} onChange={(event) => setCurrentPassword(event.target.value)} />
           </label>
           <label className="block text-sm">Nueva contraseña
-            <input aria-label="Nueva contraseña" className="mt-1 w-full rounded border px-3 py-2" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
+            <input aria-label="Nueva contraseña" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} />
             {passwordFieldErrors.new_password ? <span className="text-xs text-rose-700">{passwordFieldErrors.new_password}</span> : null}
           </label>
           <label className="block text-sm">Confirmar nueva contraseña
-            <input aria-label="Confirmar nueva contraseña" className="mt-1 w-full rounded border px-3 py-2" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
+            <input aria-label="Confirmar nueva contraseña" className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" type="password" value={confirmPassword} onChange={(event) => setConfirmPassword(event.target.value)} />
           </label>
           {passwordMismatchError ? <p role="alert" className="text-sm text-rose-700">{passwordMismatchError}</p> : null}
-          <button className="rounded bg-slate-900 px-4 py-2 text-white" disabled={passwordMutation.isPending} type="submit">Actualizar contraseña</button>
+          <button className="rounded-lg bg-slate-900 px-4 py-2 text-white" disabled={passwordMutation.isPending} type="submit">Actualizar contraseña</button>
         </form>
       </article>
     </section>
@@ -339,7 +339,7 @@ function AddressField({ label, name, value, onChange, error }: AddressFieldProps
   return (
     <label className="block text-sm">
       {label}
-      <input aria-label={label} name={name} className="mt-1 w-full rounded border px-3 py-2" value={value} onChange={(event) => onChange(event.target.value)} />
+      <input aria-label={label} name={name} className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2" value={value} onChange={(event) => onChange(event.target.value)} />
       {error ? <span className="text-xs text-rose-700">{error}</span> : null}
     </label>
   )
@@ -365,7 +365,7 @@ function ProvinceField({ value, error, filteredProvinces, isOpen, onBlur, onChan
         aria-controls="province-options"
         aria-expanded={isOpen}
         aria-label="Provincia"
-        className="mt-1 w-full rounded border px-3 py-2"
+        className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2"
         name="province"
         onBlur={onBlur}
         onChange={(event) => onChange(event.target.value)}
@@ -374,7 +374,7 @@ function ProvinceField({ value, error, filteredProvinces, isOpen, onBlur, onChan
         value={value}
       />
       {isOpen ? (
-        <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded border border-slate-200 bg-white shadow-lg" id="province-options" role="listbox">
+        <div className="absolute z-10 mt-1 max-h-56 w-full overflow-auto rounded-lg border border-slate-200 bg-white shadow-lg" id="province-options" role="listbox">
           {filteredProvinces.length > 0 ? (
             filteredProvinces.map((province) => (
               <button
