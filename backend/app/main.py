@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import RedirectResponse
 
 from app.api.router import api_router
 from app.core.config import Settings, get_settings
@@ -45,3 +46,12 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
 
 app = create_app()
+
+
+@app.get("/payment/result")
+async def payment_result_redirect(external_reference: str):
+    """Redirect MP auto-return to the frontend payment result page."""
+    frontend_url = "http://localhost:5173"
+    return RedirectResponse(
+        url=f"{frontend_url}/payment/result?external_reference={external_reference}",
+    )

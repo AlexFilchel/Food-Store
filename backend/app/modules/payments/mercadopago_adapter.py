@@ -31,10 +31,14 @@ class MercadoPagoAdapter(MercadoPagoPort):
             "external_reference": external_reference,
             "items": items,
             "back_urls": back_urls,
-            "auto_return": "approved",
             "notification_url": notification_url,
             "statement_descriptor": "FOOD STORE",
         }
+
+        # auto_return requires HTTPS back_urls — MP rejects HTTP URLs in production (APP_USR).
+        # Only include it when all back_urls use HTTPS to avoid 400 errors in development.
+        if self._uses_https_back_urls(back_urls):
+            payload["auto_return"] = "approved"
 
         try:
             async with httpx.AsyncClient(timeout=self._timeout) as client:
@@ -66,6 +70,14 @@ class MercadoPagoAdapter(MercadoPagoPort):
         except httpx.HTTPError as exc:
             logger.error("mp.preference.http_error", error=str(exc))
             return MercadoPagoPreferenceResult(success=False, error=str(exc))
+
+    @staticmethod
+    def _uses_https_back_urls(back_urls: dict) -> bool:
+        """Check if all defined back_urls use HTTPS."""
+        for url in back_urls.values():
+            if isinstance(url, str) and url and not url.startswith("https://"):
+                return False
+        return True
 
     async def get_payment_status(self, mp_payment_id: str) -> MercadoPagoPaymentStatus:
         try:
