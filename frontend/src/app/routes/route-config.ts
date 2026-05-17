@@ -15,7 +15,6 @@ export const routePaths = {
   adminUserDetail: '/admin/users/:userId',
   adminOrders: '/admin/orders',
   adminOrderDetail: '/admin/orders/:orderId',
-  stock: '/stock',
   orders: '/orders',
   orderDetail: '/orders/:orderId',
   paymentResult: '/payment/result',
@@ -38,13 +37,6 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     label: 'Mi espacio',
     description: 'Resumen del cliente y próximos pasos.',
     allowedRoles: ['CLIENT', 'ADMIN'],
-    exact: true,
-  },
-  {
-    to: routePaths.admin,
-    label: 'Administración',
-    description: 'Panel operativo para administración general.',
-    allowedRoles: ['ADMIN'],
     exact: true,
   },
   {
@@ -84,13 +76,6 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     allowedRoles: ['ADMIN'],
   },
   {
-    to: routePaths.stock,
-    label: 'Stock',
-    description: 'Gestión de inventario y disponibilidad.',
-    allowedRoles: ['ADMIN', 'STOCK'],
-    exact: true,
-  },
-  {
     to: routePaths.adminOrders,
     label: 'Pedidos',
     description: 'Gestión operativa de pedidos y seguimiento del flujo.',
@@ -117,11 +102,7 @@ export function getNavigationForRoles(userRoles: readonly string[]) {
 
 export function getDefaultAuthenticatedPath(userRoles: readonly string[]) {
   if (userRoles.includes('ADMIN')) {
-    return routePaths.admin
-  }
-
-  if (userRoles.includes('STOCK')) {
-    return routePaths.stock
+    return routePaths.adminMetrics
   }
 
   if (userRoles.includes('PEDIDOS')) {

@@ -130,16 +130,9 @@ const adminUser: AuthUser = {
   roles: ['ADMIN'],
 }
 
-const stockUser: AuthUser = {
-  ...clientUser,
-  id: 3,
-  email: 'stock@example.com',
-  roles: ['STOCK'],
-}
-
 const pedidosUser: AuthUser = {
   ...clientUser,
-  id: 4,
+  id: 3,
   email: 'pedidos@example.com',
   roles: ['PEDIDOS'],
 }
@@ -338,7 +331,7 @@ describe('AppRouter access control', () => {
     vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
     useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: null })
 
-    const firstRender = renderRouter(['/admin'])
+    const firstRender = renderRouter(['/admin/metrics'])
     expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
     expect(screen.getByText(/shell te protege a nivel de experiencia/i)).toBeInTheDocument()
     expect(screen.getByText(/autorización real sigue estando del lado del backend/i)).toBeInTheDocument()
@@ -348,9 +341,9 @@ describe('AppRouter access control', () => {
     vi.spyOn(authClient, 'me').mockResolvedValue(adminUser)
     useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: null })
 
-    renderRouter(['/admin'])
+    renderRouter(['/admin/metrics'])
 
-    expect(await screen.findByRole('heading', { name: 'Panel de administración' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard de métricas' })).toBeInTheDocument()
     await waitFor(() => expect(authClient.me).toHaveBeenCalledTimes(1))
 
     const adminCategoriesRender = renderRouter(['/admin/categories'])
@@ -368,24 +361,17 @@ describe('AppRouter access control', () => {
     },
     {
       user: adminUser,
-      path: '/admin',
-      heading: 'Panel de administración',
-      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Usuarios/i, /Configuración/i, /Stock/i, /Pedidos/i],
+      path: '/admin/metrics',
+      heading: 'Dashboard de métricas',
+      visible: [/Mi espacio/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Usuarios/i, /Configuración/i, /Pedidos/i],
       hidden: [],
-    },
-    {
-      user: stockUser,
-      path: '/stock',
-      heading: 'Centro de stock',
-      visible: [/Stock/i],
-      hidden: [/Mi espacio/i, /Administración/i, /^Pedidos$/i, /Configuración/i],
     },
     {
       user: pedidosUser,
       path: '/admin/orders',
       heading: 'Pedidos operativos',
       visible: [/Pedidos/i],
-      hidden: [/Administración/i, /Stock/i, /Mis pedidos/i, /Configuración/i],
+      hidden: [/Administración/i, /Mis pedidos/i, /Configuración/i],
     },
   ])('renders role-aware navigation for $user.roles', async ({ user, path, heading, visible, hidden }) => {
     vi.spyOn(authClient, 'me').mockResolvedValue(user)
@@ -505,16 +491,16 @@ describe('AppRouter access control', () => {
   })
 
   it('renders accessible navigation controls, active route state and logout affordances', async () => {
-    vi.spyOn(authClient, 'me').mockResolvedValue(stockUser)
+    vi.spyOn(authClient, 'me').mockResolvedValue(adminUser)
     vi.spyOn(authClient, 'logout').mockResolvedValue(undefined)
-    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: stockUser })
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: adminUser })
 
     const user = userEvent.setup()
-    renderRouter(['/stock'])
+    renderRouter(['/admin/metrics'])
 
-    expect(await screen.findByRole('heading', { name: 'Centro de stock' })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { name: 'Dashboard de métricas' })).toBeInTheDocument()
     expect(screen.getByRole('navigation', { name: 'Navegación principal' })).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: /Stock/i })).toHaveAttribute('aria-current', 'page')
+    expect(screen.getByRole('link', { name: /Métricas/i })).toHaveAttribute('aria-current', 'page')
 
     const menuButton = screen.getByRole('button', { name: 'Abrir menú' })
     expect(menuButton).toHaveAttribute('aria-controls', 'mobile-navigation')
@@ -557,9 +543,9 @@ describe('AppRouter access control', () => {
     httpClient.defaults.adapter = ((config) => Promise.reject(httpFailure(403, config))) as AxiosAdapter
 
     try {
-      renderRouter(['/admin'])
+      renderRouter(['/admin/metrics'])
 
-      expect(await screen.findByRole('heading', { name: 'Panel de administración' })).toBeInTheDocument()
+      expect(await screen.findByRole('heading', { name: 'Dashboard de métricas' })).toBeInTheDocument()
 
       await act(async () => {
         await httpClient.get('/api/v1/admin/secure').catch(() => undefined)

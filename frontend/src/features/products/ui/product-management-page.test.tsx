@@ -41,4 +41,24 @@ describe('ProductManagementPage', () => {
     expect(screen.getByRole('combobox', { name: 'Disponibilidad' })).toBeInTheDocument()
     expect(screen.getByRole('combobox', { name: 'Stock' })).toBeInTheDocument()
   })
+
+  it('requires at least one category and one ingredient when creating a product', async () => {
+    const user = userEvent.setup()
+    renderPage()
+
+    await user.type(await screen.findByLabelText('Nombre producto'), 'Coca Cola')
+    await user.clear(screen.getByLabelText('Precio'))
+    await user.type(screen.getByLabelText('Precio'), '10.50')
+    await user.type(screen.getByLabelText('Stock cantidad'), '5')
+    await user.click(screen.getByRole('button', { name: 'Crear producto' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('seleccioná al menos una categoría')
+    expect(productClient.create).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('checkbox', { name: 'Bebidas' }))
+    await user.click(screen.getByRole('button', { name: 'Crear producto' }))
+
+    expect(await screen.findByRole('alert')).toHaveTextContent('seleccioná al menos un ingrediente')
+    expect(productClient.create).not.toHaveBeenCalled()
+  })
 })

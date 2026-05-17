@@ -116,10 +116,9 @@ export function AdminDashboardMetricsPage() {
   }
 
   return (
-    <section className="space-y-6">
+    <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <header className="space-y-2">
-        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">ADMIN</span>
-        <h2 className="mt-4 text-3xl font-semibold text-slate-950">Dashboard de métricas</h2>
+        <h2 className="text-3xl font-semibold text-slate-950">Dashboard de métricas</h2>
       </header>
 
       <div className="rounded-3xl border border-slate-200 bg-white p-4">
@@ -186,9 +185,9 @@ function DashboardContent({ data, isUpgradeEnabled, isTrendsEnabled, dateFrom, d
 
       <DataCard title="Top productos">
         {data.top_products.length === 0 ? <EmptyState text="No hay productos con ventas aprobadas en este período." /> : (
-          <table className="w-full text-left text-sm"><thead className="text-slate-500"><tr><th className="py-2">Producto</th><th className="py-2">Unidades</th><th className="py-2">Ingresos</th><th className="py-2">Pedidos</th><th className="py-2">Acción</th></tr></thead><tbody>
+          <table className="w-full text-left text-sm"><thead className="text-slate-500"><tr><th className="py-2">Producto</th><th className="py-2">Unidades</th><th className="py-2">Ingresos</th><th className="py-2">Pedidos</th></tr></thead><tbody>
             {data.top_products.map((product) => (
-              <tr key={`${product.product_id ?? 'snapshot'}-${product.display_name}`} className="border-t border-slate-100"><td className="py-2">{product.display_name}</td><td className="py-2">{product.units_sold}</td><td className="py-2">{formatMoney(product.gross_revenue)}</td><td className="py-2">{product.order_count}</td><td className="py-2"><button type="button" disabled className="rounded border px-2 py-1 text-xs text-slate-500">Drill-down no disponible sin hidratación de filtros en productos</button></td></tr>
+              <tr key={`${product.product_id ?? 'snapshot'}-${product.display_name}`} className="border-t border-slate-100"><td className="py-2">{product.display_name}</td><td className="py-2">{product.units_sold}</td><td className="py-2">{formatMoney(product.gross_revenue)}</td><td className="py-2">{product.order_count}</td></tr>
             ))}
           </tbody></table>
         )}
@@ -241,85 +240,102 @@ function SectionMessage({ title, tone = 'neutral' }: { title: string; tone?: 'ne
 
 function PieChart({ categories }: { categories: DashboardMetricsResponse['category_insights'] }) {
   if (categories.length === 0) return <EmptyState text="No hay datos para graficar." />
-  
-  const size = 200
-  const radius = 70
+
+  const size = 320
+  const radius = 105
   const cx = size / 2
   const cy = size / 2
-  
-  // Color palette for pie slices
+
   const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6', '#ec4899', '#14b8a6', '#f97316']
-  
-  // Calculate angles for each slice
-  let currentAngle = -90 // Start from top
+
+  let currentAngle = -90
   const slices = categories.map((cat, index) => {
     const sliceAngle = (Number(cat.revenue_share_percent) / 100) * 360
     const startAngle = currentAngle
     const endAngle = currentAngle + sliceAngle
-    
-    // Convert angles to radians
+
     const startRad = (startAngle * Math.PI) / 180
     const endRad = (endAngle * Math.PI) / 180
-    
-    // Calculate start and end points
+
     const x1 = cx + radius * Math.cos(startRad)
     const y1 = cy + radius * Math.sin(startRad)
     const x2 = cx + radius * Math.cos(endRad)
     const y2 = cy + radius * Math.sin(endRad)
-    
-    // Large arc flag (1 if angle > 180)
+
     const largeArcFlag = sliceAngle > 180 ? 1 : 0
-    
-    // SVG path for the slice
+
     const path = `M ${cx} ${cy} L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArcFlag} 1 ${x2} ${y2} Z`
-    
-    // Calculate label position (middle of slice)
+
     const labelAngle = startAngle + sliceAngle / 2
     const labelRad = (labelAngle * Math.PI) / 180
-    const labelX = cx + (radius * 0.65) * Math.cos(labelRad)
-    const labelY = cy + (radius * 0.65) * Math.sin(labelRad)
-    
+    const outerX = cx + (radius + 12) * Math.cos(labelRad)
+    const outerY = cy + (radius + 12) * Math.sin(labelRad)
+    const textX = cx + (radius + 28) * Math.cos(labelRad)
+    const textY = cy + (radius + 28) * Math.sin(labelRad)
+    const share = Number(cat.revenue_share_percent)
+
     currentAngle = endAngle
-    
+
     return {
       path,
       color: colors[index % colors.length],
       category: cat,
-      labelX,
-      labelY,
+      share,
+      outerX,
+      outerY,
+      textX,
+      textY,
+      textAnchor: textX >= cx ? 'start' : 'end',
     }
   })
-  
+
+  const isSingleCategory = slices.length === 1
+
   return (
-    <div className="flex flex-col items-center gap-4">
+    <div className="grid gap-4 md:grid-cols-[1.2fr,0.8fr] md:items-center">
       <div role="img" aria-label="Gráfico de torta de distribución de categorías">
-        <svg width={size} height={size} viewBox={`0 0 ${size} ${size}`} className="mx-auto">
-          {slices.map((slice, index) => (
-            <g key={`slice-${index}`}>
-              <path d={slice.path} fill={slice.color} stroke="white" strokeWidth="2" />
+        <svg viewBox={`0 0 ${size} ${size}`} className="mx-auto h-auto w-full max-w-[320px]">
+          {isSingleCategory ? (
+            <>
+              <circle cx={cx} cy={cy} r={radius} fill={slices[0].color} stroke="white" strokeWidth="2" />
+              <line x1={cx} y1={cy - (radius + 8)} x2={cx} y2={cy - (radius + 26)} stroke={slices[0].color} strokeWidth="1.5" />
               <text
-                x={slice.labelX}
-                y={slice.labelY}
+                x={cx}
+                y={cy - (radius + 32)}
                 textAnchor="middle"
                 dominantBaseline="middle"
-                className="text-xs font-semibold text-white pointer-events-none"
-                style={{ textShadow: '0 1px 2px rgba(0,0,0,0.5)' }}
+                className="pointer-events-none fill-slate-900 text-xs font-semibold"
               >
-                {slice.category.revenue_share_percent}%
+                {slices[0].share.toFixed(1)}%
               </text>
-            </g>
-          ))}
+            </>
+          ) : (
+            slices.map((slice, index) => (
+              <g key={`slice-${index}`}>
+                <path d={slice.path} fill={slice.color} stroke="white" strokeWidth="2" />
+                <line x1={slice.outerX} y1={slice.outerY} x2={slice.textX} y2={slice.textY} stroke={slice.color} strokeWidth="1.5" />
+                <text
+                  x={slice.textX}
+                  y={slice.textY}
+                  textAnchor={slice.textAnchor}
+                  dominantBaseline="middle"
+                  className="pointer-events-none fill-slate-900 text-xs font-semibold"
+                >
+                  {slice.share.toFixed(1)}%
+                </text>
+              </g>
+            ))
+          )}
         </svg>
       </div>
-      
-      {/* Legend */}
+
       <div className="w-full space-y-2">
         {slices.map((slice, index) => (
           <div key={`legend-${index}`} className="flex items-start gap-2 text-sm">
             <div className="mt-1 h-3 w-3 flex-shrink-0 rounded-full" style={{ backgroundColor: slice.color }} />
             <div className="flex-1">
               <div className="font-medium text-slate-900">{slice.category.category_name}</div>
-              <div className="text-xs text-slate-600">{formatMoney(slice.category.gross_revenue)} · {slice.category.revenue_share_percent}%</div>
+              <div className="text-xs text-slate-600">{formatMoney(slice.category.gross_revenue)} · {slice.share.toFixed(1)}%</div>
             </div>
           </div>
         ))}

@@ -18,7 +18,6 @@ import { AccessDeniedPage } from '@/pages/access-denied-page/ui/access-denied-pa
 import { AdminCategoriesPage } from '@/pages/admin-categories-page/ui/admin-categories-page'
 import { AdminIngredientsPage } from '@/pages/admin-ingredients-page/ui/admin-ingredients-page'
 import { AdminDashboardMetricsPage } from '@/pages/admin-dashboard-metrics-page/ui/admin-dashboard-metrics-page'
-import { AdminPage } from '@/pages/admin-page/ui/admin-page'
 import { AdminProductsPage } from '@/pages/admin-products-page/ui/admin-products-page'
 import { AdminUsersPage } from '@/pages/admin-users-page/ui/admin-users-page'
 import { AdminSystemConfigurationPage } from '@/pages/admin-system-configuration-page/ui/admin-system-configuration-page'
@@ -35,7 +34,6 @@ import { AdminOrderDetailPage } from '@/pages/admin-order-detail-page/ui/admin-o
 import { PaymentResultPage } from '@/pages/payment-result-page/ui/payment-result-page'
 import { PublicProductDetailPage } from '@/pages/public-product-detail-page/ui/public-product-detail-page'
 import { RegisterPage } from '@/pages/register-page/ui/register-page'
-import { StockPage } from '@/pages/stock-page/ui/stock-page'
 import { GlobalFeedbackBanner } from '@/shared/ui/global-feedback-banner'
 import { PublicStorefrontShell } from '@/shared/ui/public-storefront-shell'
 import { AuthenticatedShellLayout } from '@/widgets/app-shell/ui/authenticated-shell-layout'
@@ -85,7 +83,6 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           }
         >
           <Route path={routePaths.app} element={<AppPage />} />
-          <Route path={routePaths.admin} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminPage /></ProtectedByRole>} />
           <Route path={routePaths.adminMetrics} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminDashboardMetricsPage /></ProtectedByRole>} />
           <Route path={routePaths.adminCategories} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminCategoriesPage /></ProtectedByRole>} />
           <Route path={routePaths.adminIngredients} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminIngredientsPage /></ProtectedByRole>} />
@@ -93,7 +90,6 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           <Route path={routePaths.adminUsers} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminUsersPage /></ProtectedByRole>} />
           <Route path={routePaths.adminSystemConfiguration} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminSystemConfigurationPage /></ProtectedByRole>} />
           <Route path={routePaths.adminUserDetail} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminUserDetailPage /></ProtectedByRole>} />
-          <Route path={routePaths.stock} element={<ProtectedByRole allowedRoles={['ADMIN', 'STOCK']}><StockPage /></ProtectedByRole>} />
           <Route path={routePaths.orders} element={<ProtectedByRole allowedRoles={['CLIENT']}><OrdersPage /></ProtectedByRole>} />
           <Route path={routePaths.orderDetail} element={<ProtectedByRole allowedRoles={['CLIENT']}><OrderDetailPage /></ProtectedByRole>} />
           <Route path={routePaths.adminOrders} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS']}><AdminOrdersPage /></ProtectedByRole>} />

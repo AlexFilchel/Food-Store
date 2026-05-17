@@ -77,8 +77,7 @@ export function AdminOrdersPage() {
   return (
     <section className="space-y-6 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
       <header className="space-y-2">
-        <span className="inline-flex rounded-full bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">OPERACIONES</span>
-        <h2 className="mt-4 text-3xl font-semibold text-slate-950">Pedidos operativos</h2>
+        <h2 className="text-3xl font-semibold text-slate-950">Pedidos operativos</h2>
         <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
           Gestioná todos los pedidos activos y revisá su contexto antes de ejecutar acciones del flujo.
         </p>

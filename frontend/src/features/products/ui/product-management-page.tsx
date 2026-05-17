@@ -68,6 +68,17 @@ export function ProductManagementPage() {
   async function onSubmit(event: React.FormEvent) {
     event.preventDefault()
     setError(null)
+
+    if (!editing && categoryIds.length === 0) {
+      setError('Para crear un producto, seleccioná al menos una categoría.')
+      return
+    }
+
+    if (!editing && ingredientIds.length === 0) {
+      setError('Para crear un producto, seleccioná al menos un ingrediente.')
+      return
+    }
+
     const payload = { ...form, category_ids: categoryIds, ingredients: composition }
 
     try {

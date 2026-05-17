@@ -1,4 +1,5 @@
-import { Link, NavLink, Outlet } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 
 import { getNavigationForRoles, routePaths } from '@/app/routes/route-config'
 import { LogoutButton } from '@/features/auth/ui/logout-button'
@@ -7,15 +8,20 @@ import { useAuthStore } from '@/shared/stores/auth-store'
 import { useUiStore } from '@/shared/stores/ui-store'
 
 export function AuthenticatedShellLayout() {
+  const { pathname } = useLocation()
   const user = useAuthStore((state) => state.user)
   const sidebarOpen = useUiStore((state) => state.sidebarOpen)
   const toggleSidebar = useUiStore((state) => state.toggleSidebar)
   const navigation = getNavigationForRoles(user?.roles ?? [])
   const desktopSidebarExpanded = sidebarOpen
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' })
+  }, [pathname])
+
   return (
     <div className="min-h-screen bg-slate-100 text-slate-950">
-      <header className="border-b border-slate-200 bg-white/95 backdrop-blur">
+      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/95 backdrop-blur">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Food Store</p>
@@ -119,7 +125,6 @@ function NavigationList({ navigation, compact }: NavigationListProps) {
               </span>
               {!compact ? <span className="block text-sm font-semibold">{item.label}</span> : null}
             </div>
-            {!compact ? <span className="mt-1 block text-sm text-slate-500">{item.description}</span> : null}
           </NavLink>
         </li>
       ))}
@@ -146,8 +151,6 @@ function NavigationIcon({ to }: { to: string }) {
         return '👥'
       case routePaths.adminSystemConfiguration:
         return '⚙️'
-      case routePaths.stock:
-        return '🛒'
       case routePaths.adminOrders:
         return '📋'
       case routePaths.orders:
