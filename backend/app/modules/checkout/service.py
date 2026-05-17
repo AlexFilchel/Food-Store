@@ -18,6 +18,7 @@ from app.modules.checkout.schemas import (
     CheckoutPreflightValidatedLine,
     to_money,
 )
+from app.modules.system_configuration.service import system_configuration_service
 
 
 class CheckoutService:
@@ -26,12 +27,20 @@ class CheckoutService:
             raise checkout_empty_cart()
 
         async with uow:
+            effective_map = await system_configuration_service.get_effective_map_in_uow(uow)
+            max_items = int(effective_map["orders.max_items_per_order"])
+            max_qty = int(effective_map["orders.max_quantity_per_item"])
+            if len(payload.items) > max_items:
+                raise checkout_invalid_quantity(line_index=0)
+
             address = await self._resolve_address(uow, user_id=user_id, delivery_address_id=payload.delivery_address_id)
             validated_lines: list[CheckoutPreflightValidatedLine] = []
             subtotal = Decimal("0.00")
 
             for index, line in enumerate(payload.items):
                 if not isinstance(line.quantity, int) or line.quantity < 1:
+                    raise checkout_invalid_quantity(line_index=index)
+                if line.quantity > max_qty:
                     raise checkout_invalid_quantity(line_index=index)
 
                 product = await uow.products.get_by_id(line.product_id)

@@ -16,6 +16,7 @@ def import_models() -> None:
     from app.modules.orders import model as _order_models  # noqa: F401
     from app.modules.payments import model as _payment_models  # noqa: F401
     from app.modules.products import model as _product_models  # noqa: F401
+    from app.modules.system_configuration import model as _system_configuration_models  # noqa: F401
 
 
 @lru_cache

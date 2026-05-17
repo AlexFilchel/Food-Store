@@ -67,6 +67,14 @@ vi.mock('@/entities/public-catalog/api/public-catalog-client', () => ({
   },
 }))
 
+vi.mock('@/entities/system-configuration/api/system-configuration-client', () => ({
+  systemConfigurationClient: {
+    adminList: vi.fn(),
+    adminPatch: vi.fn(),
+    publicValues: () => Promise.resolve({ values: { 'store.public_name': 'Food Store', 'store.contact_phone': null } }),
+  },
+}))
+
 vi.mock('@/entities/customer-profile/api/customer-profile-client', () => ({
   customerProfileClient: {
     get: vi.fn(),
@@ -356,13 +364,13 @@ describe('AppRouter access control', () => {
       path: '/app',
       heading: 'Espacio del cliente',
       visible: [/Mi espacio/i, /Mis pedidos/i],
-      hidden: [/Administración/i, /Stock/i, /Pedidos/i],
+      hidden: [/^Administración$/i, /^Stock$/i, /^Pedidos$/i, /^Configuración$/i],
     },
     {
       user: adminUser,
       path: '/admin',
       heading: 'Panel de administración',
-      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Usuarios/i, /Stock/i, /Pedidos/i],
+      visible: [/Mi espacio/i, /Administración/i, /Categorías/i, /Ingredientes/i, /Productos/i, /Usuarios/i, /Configuración/i, /Stock/i, /Pedidos/i],
       hidden: [],
     },
     {
@@ -370,14 +378,14 @@ describe('AppRouter access control', () => {
       path: '/stock',
       heading: 'Centro de stock',
       visible: [/Stock/i],
-      hidden: [/Mi espacio/i, /Administración/i, /Pedidos/i],
+      hidden: [/Mi espacio/i, /Administración/i, /^Pedidos$/i, /Configuración/i],
     },
     {
       user: pedidosUser,
       path: '/admin/orders',
       heading: 'Pedidos operativos',
       visible: [/Pedidos/i],
-      hidden: [/Administración/i, /Stock/i, /Mis pedidos/i],
+      hidden: [/Administración/i, /Stock/i, /Mis pedidos/i, /Configuración/i],
     },
   ])('renders role-aware navigation for $user.roles', async ({ user, path, heading, visible, hidden }) => {
     vi.spyOn(authClient, 'me').mockResolvedValue(user)
@@ -448,6 +456,16 @@ describe('AppRouter access control', () => {
     renderRouter(['/admin/users'])
 
     expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
+  })
+
+  it('blocks non-admin users from the system configuration route', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
+
+    renderRouter(['/admin/system/configuration'])
+
+    expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
+    expect(screen.queryByRole('heading', { name: 'Configuración del sistema' })).not.toBeInTheDocument()
   })
 
   it('allows admin users to access user administration routes', async () => {

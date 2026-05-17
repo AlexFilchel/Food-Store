@@ -156,9 +156,13 @@ async def test_admin_dashboard_metrics_formula_and_empty_period(client):
     )
     assert response.status_code == 200
     payload = response.json()
+    assert payload["effective_filters"]["from"]
     assert payload["summary"]["gross_approved_revenue"] == "200.00"
     assert payload["summary"]["counted_orders"] == 1
     assert payload["summary"]["average_ticket"] == "200.00"
+    assert isinstance(payload.get("category_insights"), list)
+    assert isinstance(payload.get("recent_sales"), list)
+    assert isinstance(payload.get("operational_alerts"), list)
 
     empty = await client.get(
         "/api/v1/admin/dashboard/metrics",
@@ -175,6 +179,7 @@ async def test_admin_dashboard_metrics_formula_and_empty_period(client):
         "average_ticket": "0.00",
         "pending_operational_count": 0,
     }
+    assert empty.json().get("kpi_comparisons") is not None
 
 
 @pytest.mark.asyncio
@@ -203,7 +208,13 @@ async def test_admin_dashboard_metrics_timezone_and_validation(client):
         headers=admin_headers,
     )
     assert response.status_code == 200
-    assert any(bucket["label"] == "2026-05-10" for bucket in response.json()["sales_by_period"])
+    # sales_by_period should only contain buckets with sales (order_count > 0)
+    sales_by_period = response.json()["sales_by_period"]
+    assert len(sales_by_period) > 0, "Should have at least one bucket with sales"
+    assert all(bucket["order_count"] > 0 for bucket in sales_by_period), "All buckets should have at least one order"
+    # Payment created at 2026-05-11 02:30 UTC = 2026-05-10 23:30 in BsAs timezone (UTC-3)
+    assert any(bucket["label"] == "2026-05-10" for bucket in sales_by_period), "Should have sales on 2026-05-10 (BsAs timezone)"
+    assert all("bucket_start" in bucket and "bucket_end" in bucket for bucket in sales_by_period)
 
     invalid_granularity = await client.get(
         "/api/v1/admin/dashboard/metrics",
@@ -244,6 +255,12 @@ async def test_admin_dashboard_metrics_top_products_and_zero_states(client):
     assert response.status_code == 200
     payload = response.json()
     assert payload["top_products"][0]["display_name"] == "Producto Snapshot"
+    assert payload["health"]["pending_orders_count"] >= 0
+    assert payload["health"]["stuck_threshold_minutes"] >= 30
+    assert "bucket_start" in payload["sales_by_period"][0]
+    if payload["recent_sales"]:
+        assert "order_number" in payload["recent_sales"][0]
+        assert "approved_at" in payload["recent_sales"][0]
 
     states = {item["state_code"]: item["count"] for item in payload["orders_by_state"]}
     assert "PENDIENTE" in states

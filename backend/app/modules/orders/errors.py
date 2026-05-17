@@ -144,3 +144,13 @@ def order_operation_not_allowed(*, action: str) -> AppError:
         detail=f"Operation '{action}' is not allowed for this order.",
         type_path="order-operation-not-allowed",
     )
+
+
+def order_disabled() -> AppError:
+    return AppError(
+        status_code=HTTPStatus.CONFLICT,
+        code="ORDERING_DISABLED",
+        title="Ordering Disabled",
+        detail="La tienda deshabilitó temporalmente la creación de pedidos nuevos.",
+        type_path="ordering-disabled",
+    )

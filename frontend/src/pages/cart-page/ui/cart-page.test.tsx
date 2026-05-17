@@ -176,4 +176,26 @@ describe('CartPage', () => {
     expect(createOrderMock).not.toHaveBeenCalled()
     expect(initPaymentMock).not.toHaveBeenCalled()
   })
+
+  it('shows clear ordering-disabled message when backend pauses ordering', async () => {
+    useCartStore.getState().addItem({
+      productId: 5,
+      slug: 'burger-pro',
+      name: 'Burger Pro',
+      unitPrice: '22.00',
+      quantity: 1,
+      removedIngredients: [],
+    })
+    useAuthStore.setState({ accessToken: 'token', refreshToken: 'refresh', user: null })
+    preflightMock.mockResolvedValue({ subtotal: '22.00' })
+    createOrderMock.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 409, data: { code: 'ORDERING_DISABLED', detail: 'disabled' } },
+    })
+
+    renderCartRoute()
+    await userEvent.click(await screen.findByRole('button', { name: 'Confirmar pedido' }))
+
+    expect(await screen.findByText(/pausó temporalmente los pedidos nuevos/i)).toBeInTheDocument()
+  })
 })

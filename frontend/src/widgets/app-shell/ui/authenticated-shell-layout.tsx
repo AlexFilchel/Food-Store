@@ -144,6 +144,8 @@ function NavigationIcon({ to }: { to: string }) {
         return '📦'
       case routePaths.adminUsers:
         return '👥'
+      case routePaths.adminSystemConfiguration:
+        return '⚙️'
       case routePaths.stock:
         return '🛒'
       case routePaths.adminOrders:
