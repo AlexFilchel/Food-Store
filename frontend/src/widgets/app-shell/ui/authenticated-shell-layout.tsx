@@ -25,7 +25,6 @@ export function AuthenticatedShellLayout() {
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700">Food Store</p>
-            <h1 className="text-lg font-semibold">Shell protegido</h1>
           </div>
 
           <div className="hidden items-center gap-3 md:flex">

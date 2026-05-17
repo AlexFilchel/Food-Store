@@ -17,7 +17,6 @@ export function PublicStorefrontShell({ children }: PropsWithChildren) {
         <div className="mx-auto flex max-w-6xl flex-col gap-4 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-sky-700">Food Store</p>
-            <p className="text-sm text-slate-600">Armá tu pedido antes del checkout.</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">

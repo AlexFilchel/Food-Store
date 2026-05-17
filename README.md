@@ -28,6 +28,28 @@ python -m app.db.seed
 uvicorn app.main:app --reload
 ```
 
+### Datos seed (demo)
+
+Al ejecutar `python -m app.db.seed` se cargan datos base para pruebas:
+
+- 20 categorías
+- 30 ingredientes
+- 40 productos
+- usuarios con roles `ADMIN`, `STOCK`, `PEDIDOS`, `CLIENT` y combinaciones operativas
+
+Usuarios seed relevantes:
+
+- `admin@foodstore.local` → `ADMIN` (bootstrap)
+- `admin2@foodstore.local` → `ADMIN`
+- `stock@foodstore.local` → `STOCK`
+- `pedidos@foodstore.local` → `PEDIDOS`
+- `operador@foodstore.local` → `STOCK`, `PEDIDOS`
+- `cliente1@foodstore.local` → `CLIENT`
+- `cliente2@foodstore.local` → `CLIENT`
+- `cliente3@foodstore.local` → `CLIENT`
+
+Contraseña inicial de usuarios seed: valor de `BOOTSTRAP_ADMIN_PASSWORD` en `backend/.env`.
+
 Variables nuevas de auth/RBAC relevantes en `backend/.env.example`:
 
 - `PASSWORD_MIN_LENGTH`
