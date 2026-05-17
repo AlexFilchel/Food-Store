@@ -18,7 +18,9 @@ from app.modules.orders.errors import (
     order_operation_not_allowed,
     order_payment_method_not_found,
     order_product_not_found,
+    order_disabled,
 )
+from app.modules.system_configuration.service import system_configuration_service
 from app.modules.orders.fsm import ALLOWED_TRANSITIONS, TERMINAL_STATES, ActorType, TransitionRequest, can_transition
 from app.modules.orders.model import Order, OrderHistory, OrderItem, OrderState
 from app.modules.orders.schemas import (
@@ -164,6 +166,15 @@ class OrderService:
             raise order_empty_cart()
 
         async with uow:
+            effective_map = await system_configuration_service.get_effective_map_in_uow(uow)
+            if not bool(effective_map["store.ordering_enabled"]):
+                raise order_disabled()
+            max_items = int(effective_map["orders.max_items_per_order"])
+            max_qty = int(effective_map["orders.max_quantity_per_item"])
+
+            if len(payload.items) > max_items:
+                raise order_invalid_quantity(line_index=0)
+
             # resolve delivery address
             address = await self._resolve_address(uow, user_id=user_id, delivery_address_id=payload.delivery_address_id)
 
@@ -185,6 +196,8 @@ class OrderService:
 
             for index, line in enumerate(payload.items):
                 if not isinstance(line.quantity, int) or line.quantity < 1:
+                    raise order_invalid_quantity(line_index=index)
+                if line.quantity > max_qty:
                     raise order_invalid_quantity(line_index=index)
 
                 product = await uow.products.get_by_id(line.product_id)

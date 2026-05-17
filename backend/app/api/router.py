@@ -14,6 +14,8 @@ from app.modules.payments.router import router as payment_router
 from app.modules.products.router import router as product_router
 from app.modules.products.public_router import router as public_catalog_product_router
 from app.modules.system.router import router as system_router
+from app.modules.system_configuration.router import admin_router as admin_system_configuration_router
+from app.modules.system_configuration.router import public_router as public_system_configuration_router
 
 api_router = APIRouter()
 api_router.include_router(admin_dashboard_metrics_router)
@@ -31,3 +33,5 @@ api_router.include_router(payment_router)
 api_router.include_router(product_router)
 api_router.include_router(public_catalog_product_router)
 api_router.include_router(system_router)
+api_router.include_router(admin_system_configuration_router)
+api_router.include_router(public_system_configuration_router)

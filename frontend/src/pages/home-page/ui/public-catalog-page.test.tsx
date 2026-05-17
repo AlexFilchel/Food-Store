@@ -16,6 +16,12 @@ vi.mock('@/entities/public-catalog/api/public-catalog-client', () => ({
   },
 }))
 
+vi.mock('@/entities/system-configuration/api/system-configuration-client', () => ({
+  systemConfigurationClient: {
+    publicValues: vi.fn().mockResolvedValue({ values: { 'store.public_name': 'Food Store', 'store.contact_phone': null } }),
+  },
+}))
+
 function renderWithRouter(path: string) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -61,6 +67,7 @@ describe('Public catalog pages', () => {
     renderWithRouter('/')
 
     expect(await screen.findByRole('heading', { name: 'Catálogo público' })).toBeInTheDocument()
+    expect(screen.getAllByText('Food Store').length).toBeGreaterThan(0)
     expect(await screen.findByText('Burger Pro')).toBeInTheDocument()
     expect(screen.getByRole('link', { name: 'Ver detalle y agregar' })).toHaveAttribute('href', '/catalog/products/burger-pro')
     expect(screen.getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/login')

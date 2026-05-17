@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 
 import { routePaths } from '@/app/routes/route-config'
 import { usePublicCatalogListQuery } from '@/features/public-catalog/model/hooks'
+import { usePublicSystemConfigurationQuery } from '@/features/system-configuration/model/hooks'
 
 export function HomePage() {
   const [search, setSearch] = useState('')
@@ -19,12 +20,16 @@ export function HomePage() {
   )
 
   const query = usePublicCatalogListQuery(filters)
+  const publicConfigurationQuery = usePublicSystemConfigurationQuery()
+  const publicValues = publicConfigurationQuery.data?.values ?? {}
 
   return (
     <section className="mx-auto max-w-6xl space-y-6 px-4 py-10">
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold text-slate-950">Catálogo público</h1>
         <p className="text-slate-600">Descubrí productos disponibles para comprar.</p>
+        <p className="text-sm text-slate-500">{String(publicValues['store.public_name'] ?? 'Food Store')}</p>
+        {publicValues['store.contact_phone'] ? <p className="text-sm text-slate-500">Tel: {String(publicValues['store.contact_phone'])}</p> : null}
       </header>
 
       <div className="grid gap-3 sm:grid-cols-2">

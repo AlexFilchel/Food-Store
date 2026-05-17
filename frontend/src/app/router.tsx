@@ -21,6 +21,7 @@ import { AdminDashboardMetricsPage } from '@/pages/admin-dashboard-metrics-page/
 import { AdminPage } from '@/pages/admin-page/ui/admin-page'
 import { AdminProductsPage } from '@/pages/admin-products-page/ui/admin-products-page'
 import { AdminUsersPage } from '@/pages/admin-users-page/ui/admin-users-page'
+import { AdminSystemConfigurationPage } from '@/pages/admin-system-configuration-page/ui/admin-system-configuration-page'
 import { AdminUserDetailPage } from '@/pages/admin-user-detail-page/ui/admin-user-detail-page'
 import { AppPage } from '@/pages/app-page/ui/app-page'
 import { CartPage } from '@/pages/cart-page/ui/cart-page'
@@ -90,6 +91,7 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           <Route path={routePaths.adminIngredients} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminIngredientsPage /></ProtectedByRole>} />
           <Route path={routePaths.adminProducts} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminProductsPage /></ProtectedByRole>} />
           <Route path={routePaths.adminUsers} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminUsersPage /></ProtectedByRole>} />
+          <Route path={routePaths.adminSystemConfiguration} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminSystemConfigurationPage /></ProtectedByRole>} />
           <Route path={routePaths.adminUserDetail} element={<ProtectedByRole allowedRoles={['ADMIN']}><AdminUserDetailPage /></ProtectedByRole>} />
           <Route path={routePaths.stock} element={<ProtectedByRole allowedRoles={['ADMIN', 'STOCK']}><StockPage /></ProtectedByRole>} />
           <Route path={routePaths.orders} element={<ProtectedByRole allowedRoles={['CLIENT']}><OrdersPage /></ProtectedByRole>} />

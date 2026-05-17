@@ -10,7 +10,6 @@ const DEFAULT_TIMEZONE = 'America/Argentina/Buenos_Aires'
 const PREF_KEY = 'admin.dashboard.view.v1'
 
 type DatePreset = 'today' | 'last_7_days' | 'last_30_days' | 'current_month' | 'custom'
-type ViewMode = 'chart' | 'table'
 
 function formatMoney(value: string) {
   return new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'ARS' }).format(Number(value))
@@ -42,29 +41,26 @@ function presetRange(preset: DatePreset) {
   }
 }
 
-function readStoredPreference(): { preset: DatePreset; timezone: string; view_mode: ViewMode } {
+function readStoredPreference(): { preset: DatePreset; timezone: string } {
   try {
     const raw = localStorage.getItem(PREF_KEY)
-    if (!raw) return { preset: 'last_7_days', timezone: DEFAULT_TIMEZONE, view_mode: 'table' }
+    if (!raw) return { preset: 'last_7_days', timezone: DEFAULT_TIMEZONE }
     const parsed = JSON.parse(raw) as {
       version?: number
       preset?: DatePreset
       timezone?: string
-      view_mode?: ViewMode
     }
     if (parsed.version !== 1) throw new Error('unsupported version')
     const preset = parsed.preset ?? 'last_7_days'
-    const viewMode = parsed.view_mode ?? 'table'
     const timezone = parsed.timezone?.trim() || DEFAULT_TIMEZONE
     if (!['today', 'last_7_days', 'last_30_days', 'current_month', 'custom'].includes(preset)) throw new Error('invalid preset')
-    if (!['table', 'chart'].includes(viewMode)) throw new Error('invalid view mode')
-    return { preset, timezone, view_mode: viewMode }
+    return { preset, timezone }
   } catch {
-    return { preset: 'last_7_days', timezone: DEFAULT_TIMEZONE, view_mode: 'table' }
+    return { preset: 'last_7_days', timezone: DEFAULT_TIMEZONE }
   }
 }
 
-function savePreference(preset: DatePreset, timezone: string, viewMode: ViewMode, from: string, to: string) {
+function savePreference(preset: DatePreset, timezone: string, from: string, to: string) {
   localStorage.setItem(
     PREF_KEY,
     JSON.stringify({
@@ -73,8 +69,6 @@ function savePreference(preset: DatePreset, timezone: string, viewMode: ViewMode
       custom_range: preset === 'custom' ? { from, to } : null,
       granularity: 'day',
       timezone,
-      view_mode: viewMode,
-      chart_kind: 'line',
       updated_at: new Date().toISOString(),
     }),
   )
@@ -88,7 +82,6 @@ export function AdminDashboardMetricsPage() {
   const [dateTo, setDateTo] = useState(initialRange.to)
   const [granularity, setGranularity] = useState<'day' | 'week' | 'month'>('day')
   const [timezone, setTimezone] = useState(stored.timezone)
-  const [viewMode, setViewMode] = useState<ViewMode>(stored.view_mode)
 
   const filters = useMemo(
     () => ({ from: dateFrom || undefined, to: dateTo || undefined, granularity, timezone }),
@@ -111,7 +104,7 @@ export function AdminDashboardMetricsPage() {
       const range = presetRange(nextPreset)
       setDateFrom(range.from)
       setDateTo(range.to)
-      savePreference(nextPreset, timezone, viewMode, range.from, range.to)
+      savePreference(nextPreset, timezone, range.from, range.to)
     }
   }
 
@@ -119,7 +112,7 @@ export function AdminDashboardMetricsPage() {
     setPreset('custom')
     if (kind === 'from') setDateFrom(value)
     else setDateTo(value)
-    savePreference('custom', timezone, viewMode, kind === 'from' ? value : dateFrom, kind === 'to' ? value : dateTo)
+    savePreference('custom', timezone, kind === 'from' ? value : dateFrom, kind === 'to' ? value : dateTo)
   }
 
   return (
@@ -143,7 +136,7 @@ export function AdminDashboardMetricsPage() {
             <input className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" type="date" value={dateTo} onChange={(event) => onManualDateChange('to', event.target.value)} />
           </label>
           <label className="space-y-2"><span className="text-sm text-slate-700">Zona horaria</span>
-            <input className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" value={timezone} onChange={(event) => { setTimezone(event.target.value); savePreference(preset, event.target.value, viewMode, dateFrom, dateTo) }} />
+            <input className="w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm" value={timezone} onChange={(event) => { setTimezone(event.target.value); savePreference(preset, event.target.value, dateFrom, dateTo) }} />
           </label>
         </div>
         <p className="mt-3 text-sm text-slate-500">Zona horaria efectiva: <strong>{effectiveTimezone}</strong></p>
@@ -152,12 +145,12 @@ export function AdminDashboardMetricsPage() {
       {metricsQuery.isLoading ? <SectionMessage title="Cargando métricas..." /> : null}
       {metricsQuery.isError ? <SectionMessage title={isUnauthorized ? 'Tu sesión no es válida para consultar métricas.' : isForbidden ? 'No tenés permisos para ver métricas administrativas.' : isValidationError ? 'Los filtros ingresados no son válidos.' : 'No pudimos cargar las métricas. Probá de nuevo en un momento.'} tone="error" /> : null}
 
-      {!metricsQuery.isLoading && !metricsQuery.isError && metricsQuery.data ? <DashboardContent data={metricsQuery.data} isUpgradeEnabled={isUpgradeEnabled} isTrendsEnabled={isTrendsEnabled} viewMode={viewMode} onViewModeChange={(nextMode) => { setViewMode(nextMode); savePreference(preset, timezone, nextMode, dateFrom, dateTo) }} dateFrom={dateFrom} dateTo={dateTo} /> : null}
+      {!metricsQuery.isLoading && !metricsQuery.isError && metricsQuery.data ? <DashboardContent data={metricsQuery.data} isUpgradeEnabled={isUpgradeEnabled} isTrendsEnabled={isTrendsEnabled} dateFrom={dateFrom} dateTo={dateTo} /> : null}
     </section>
   )
 }
 
-function DashboardContent({ data, isUpgradeEnabled, isTrendsEnabled, viewMode, onViewModeChange, dateFrom, dateTo }: { data: DashboardMetricsResponse; isUpgradeEnabled: boolean; isTrendsEnabled: boolean; viewMode: ViewMode; onViewModeChange: (mode: ViewMode) => void; dateFrom: string; dateTo: string }) {
+function DashboardContent({ data, isUpgradeEnabled, isTrendsEnabled, dateFrom, dateTo }: { data: DashboardMetricsResponse; isUpgradeEnabled: boolean; isTrendsEnabled: boolean; dateFrom: string; dateTo: string }) {
   const comparisons = data.kpi_comparisons ?? []
 
   return (
@@ -171,15 +164,6 @@ function DashboardContent({ data, isUpgradeEnabled, isTrendsEnabled, viewMode, o
 
       <div className="grid gap-4 xl:grid-cols-2">
         <DataCard title="Ventas por período">
-          {isTrendsEnabled ? (
-            <div>
-              <div className="mb-3 flex items-center gap-2">
-                <button type="button" className="rounded border px-2 py-1 text-sm" onClick={() => onViewModeChange('chart')} aria-label="Ver gráfico">Gráfico</button>
-                <button type="button" className="rounded border px-2 py-1 text-sm" onClick={() => onViewModeChange('table')} aria-label="Ver tabla">Tabla</button>
-              </div>
-              {viewMode === 'chart' ? <TrendChart data={data.sales_by_period} /> : null}
-            </div>
-          ) : null}
           <table className="w-full text-left text-sm">
             <thead className="text-slate-500"><tr><th className="py-2">Período</th><th className="py-2">Ingresos</th><th className="py-2">Pedidos</th></tr></thead>
             <tbody>
@@ -254,32 +238,6 @@ function MetricCard({ label, value, comparison, enabled }: { label: string; valu
 function DataCard({ title, children }: { title: string; children: React.ReactNode }) { return <article className="rounded-2xl border border-slate-200 bg-white p-4"><h3 className="text-lg font-semibold text-slate-950">{title}</h3><div className="mt-3">{children}</div></article> }
 function EmptyState({ text }: { text: string }) { return <p className="rounded-xl border border-dashed border-slate-300 p-4 text-sm text-slate-600">{text}</p> }
 function SectionMessage({ title, tone = 'neutral' }: { title: string; tone?: 'neutral' | 'error' }) { return <div className={`rounded-3xl border border-dashed bg-white p-8 text-center ${tone === 'error' ? 'border-rose-300 text-rose-700' : 'border-slate-300 text-slate-600'}`}><p>{title}</p></div> }
-
-function TrendChart({ data }: { data: DashboardMetricsResponse['sales_by_period'] }) {
-  if (data.length === 0) return <EmptyState text="No hay datos para graficar." />
-  const width = 640
-  const height = 220
-  const max = Math.max(...data.map((item) => Number(item.gross_revenue)), 1)
-  const step = width / Math.max(data.length - 1, 1)
-  const points = data.map((item, index) => {
-    const x = index * step
-    const y = height - (Number(item.gross_revenue) / max) * (height - 20)
-    return `${x},${y}`
-  }).join(' ')
-
-  return (
-    <div role="img" aria-label="Gráfico de tendencia de ingresos por período" className="overflow-x-auto">
-      <svg width={width} height={height} className="min-w-[560px]">
-        <polyline fill="none" stroke="#0f172a" strokeWidth="2" points={points} />
-        {data.map((item, index) => {
-          const x = index * step
-          const y = height - (Number(item.gross_revenue) / max) * (height - 20)
-          return <circle key={`${item.label}-dot`} cx={x} cy={y} r="3" fill="#0f172a" />
-        })}
-      </svg>
-    </div>
-  )
-}
 
 function PieChart({ categories }: { categories: DashboardMetricsResponse['category_insights'] }) {
   if (categories.length === 0) return <EmptyState text="No hay datos para graficar." />

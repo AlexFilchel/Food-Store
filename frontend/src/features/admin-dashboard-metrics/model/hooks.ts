@@ -14,11 +14,15 @@ export const adminDashboardMetricsQueryKeys = {
 }
 
 export function useAdminDashboardMetricsQuery(filters: DashboardMetricsFilters) {
+  const normalizedFrom = filters.from?.trim() || null
+  const normalizedTo = filters.to?.trim() || null
+  const normalizedTimezone = filters.timezone?.trim() || 'America/Argentina/Buenos_Aires'
+
   const normalized = {
-    from: filters.from ?? null,
-    to: filters.to ?? null,
+    from: normalizedFrom,
+    to: normalizedTo,
     granularity: filters.granularity ?? 'day',
-    timezone: filters.timezone ?? 'America/Argentina/Buenos_Aires',
+    timezone: normalizedTimezone,
   }
 
   return useQuery({

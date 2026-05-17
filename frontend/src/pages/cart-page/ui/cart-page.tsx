@@ -97,6 +97,10 @@ export function CartPage() {
       }, 1500)
     } catch (error) {
       const problem = getProblemDetails(error)
+      if (problem?.code === 'ORDERING_DISABLED') {
+        setCheckoutError('La tienda pausó temporalmente los pedidos nuevos. Podés seguir navegando y volver a intentar más tarde.')
+        return
+      }
       setCheckoutError(problem?.detail ?? 'No pudimos procesar tu pedido. Revisá tu carrito e intentá de nuevo.')
     }
   }

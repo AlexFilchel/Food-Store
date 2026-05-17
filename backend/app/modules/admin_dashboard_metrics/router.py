@@ -20,7 +20,7 @@ async def get_admin_dashboard_metrics(
     from_: Annotated[str | None, Query(alias="from")] = None,
     to: str | None = None,
     granularity: str = "day",
-    timezone: str = "America/Argentina/Buenos_Aires",
+    timezone: str | None = None,
 ) -> DashboardMetricsResponse:
     filters = DashboardMetricsQuery(from_at=from_, to=to, granularity=granularity, timezone=timezone)
     return await admin_dashboard_metrics_service.get_metrics(uow, query=filters)
