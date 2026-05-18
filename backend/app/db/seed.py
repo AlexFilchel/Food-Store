@@ -161,17 +161,39 @@ def _build_product_seed() -> list[dict]:
 PRODUCT_SEED = _build_product_seed()
 
 
+async def _clean_catalog_core(session) -> None:
+    """Delete all catalog data in reverse dependency order.
+
+    Safe to call even when tables are empty.  No FK from orders to
+    products/categories/ingredients, so existing orders are NOT affected.
+    """
+    from sqlalchemy import text
+
+    await session.execute(text("DELETE FROM ingredient_allergens"))
+    await session.execute(text("DELETE FROM product_ingredients"))
+    await session.execute(text("DELETE FROM product_categories"))
+    await session.execute(text("DELETE FROM products"))
+    await session.execute(text("DELETE FROM ingredients"))
+    # Break self-referencing FK before deleting categories
+    await session.execute(text("UPDATE categories SET parent_id = NULL"))
+    await session.execute(text("DELETE FROM categories"))
+    await session.flush()
+
+
 async def _upsert_catalog(session, model, rows: list[dict]) -> None:
+    # Prevent autoflush from causing premature UniqueViolation when
+    # updating rows whose slug/name collides with another row in the DB.
     for row in rows:
-        result = await session.execute(select(model).where(model.id == row["id"]))
-        instance = result.scalar_one_or_none()
-        if instance is None:
-            session.add(model(**row))
-            continue
-        for key, value in row.items():
-            setattr(instance, key, value)
-        if hasattr(instance, "updated_at"):
-            instance.updated_at = utc_now()
+        with session.no_autoflush:
+            result = await session.execute(select(model).where(model.id == row["id"]))
+            instance = result.scalar_one_or_none()
+            if instance is None:
+                session.add(model(**row))
+                continue
+            for key, value in row.items():
+                setattr(instance, key, value)
+            if hasattr(instance, "updated_at"):
+                instance.updated_at = utc_now()
     await session.flush()
 
 
@@ -272,6 +294,10 @@ async def seed_database() -> None:
             await _upsert_catalog(session, OrderState, ORDER_STATE_SEED)
             await _upsert_catalog(session, PaymentMethod, PAYMENT_METHOD_SEED)
             await _upsert_catalog(session, PaymentStatus, PAYMENT_STATUS_SEED)
+
+            # Clean catalogue data before re-seeding to avoid ID/slug conflicts
+            # when the DB was previously populated via the running app.
+            await _clean_catalog_core(session)
             await _upsert_catalog(session, Category, CATEGORY_SEED)
             await _upsert_catalog(session, Ingredient, INGREDIENT_SEED)
             await _upsert_catalog(session, Product, PRODUCT_SEED)
