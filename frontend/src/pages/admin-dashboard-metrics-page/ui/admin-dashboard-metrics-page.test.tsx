@@ -54,4 +54,31 @@ describe('AdminDashboardMetricsPage', () => {
     expect(screen.getByText(/pedido trabado/i)).toBeInTheDocument()
     expect(screen.queryByText(/no disponibles en esta versión del contrato/i)).not.toBeInTheDocument()
   })
+
+  it('normalizes category pie shares using revenue totals when backend percentages are inconsistent', () => {
+    localStorage.setItem('admin.dashboard.view.v1', JSON.stringify({ version: 1, preset: 'last_7_days', timezone: 'America/Argentina/Buenos_Aires', view_mode: 'chart' }))
+    vi.mocked(useAdminDashboardMetricsQuery).mockReturnValue({
+      data: {
+        effective_filters: { from: '2026-05-01', to: '2026-05-08', from_utc: '2026-05-01T00:00:00Z', to_utc: '2026-05-08T00:00:00Z', granularity: 'day', timezone: 'America/Argentina/Buenos_Aires' },
+        summary: { gross_approved_revenue: '15000.00', counted_orders: 12, average_ticket: '1250.00', pending_operational_count: 0 },
+        sales_by_period: [],
+        top_products: [],
+        orders_by_state: [],
+        category_insights: [
+          { category_id: 1, category_name: 'Pizzas', gross_revenue: '5000.00', order_count: 4, revenue_share_percent: '100.0' },
+          { category_id: 2, category_name: 'Hamburguesas', gross_revenue: '5000.00', order_count: 4, revenue_share_percent: '100.0' },
+          { category_id: 3, category_name: 'Pizza a la piedra', gross_revenue: '5000.00', order_count: 4, revenue_share_percent: '100.0' },
+        ],
+        recent_sales: [],
+        operational_alerts: [],
+      },
+      isLoading: false,
+      isError: false,
+    } as never)
+
+    render(<MemoryRouter><AdminDashboardMetricsPage /></MemoryRouter>)
+
+    expect(screen.getAllByText('33.3%')).toHaveLength(3)
+    expect(screen.queryByText('100.0%')).not.toBeInTheDocument()
+  })
 })

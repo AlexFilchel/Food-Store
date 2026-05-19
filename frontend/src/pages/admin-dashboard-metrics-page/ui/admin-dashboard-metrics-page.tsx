@@ -241,6 +241,15 @@ function SectionMessage({ title, tone = 'neutral' }: { title: string; tone?: 'ne
 function PieChart({ categories }: { categories: DashboardMetricsResponse['category_insights'] }) {
   if (categories.length === 0) return <EmptyState text="No hay datos para graficar." />
 
+  const revenues = categories.map((category) => Number(category.gross_revenue) || 0)
+  const totalRevenue = revenues.reduce((sum, revenue) => sum + revenue, 0)
+  const rawShares = categories.map((category, index) => {
+    if (totalRevenue > 0) return (revenues[index] / totalRevenue) * 100
+    return Number(category.revenue_share_percent) || 0
+  })
+  const totalRawShare = rawShares.reduce((sum, share) => sum + share, 0)
+  const normalizedShares = rawShares.map((share) => (totalRawShare > 0 ? (share / totalRawShare) * 100 : 0))
+
   const size = 320
   const radius = 105
   const cx = size / 2
@@ -250,7 +259,8 @@ function PieChart({ categories }: { categories: DashboardMetricsResponse['catego
 
   let currentAngle = -90
   const slices = categories.map((cat, index) => {
-    const sliceAngle = (Number(cat.revenue_share_percent) / 100) * 360
+    const share = normalizedShares[index] ?? 0
+    const sliceAngle = (share / 100) * 360
     const startAngle = currentAngle
     const endAngle = currentAngle + sliceAngle
 
@@ -272,7 +282,6 @@ function PieChart({ categories }: { categories: DashboardMetricsResponse['catego
     const outerY = cy + (radius + 12) * Math.sin(labelRad)
     const textX = cx + (radius + 28) * Math.cos(labelRad)
     const textY = cy + (radius + 28) * Math.sin(labelRad)
-    const share = Number(cat.revenue_share_percent)
 
     currentAngle = endAngle
 
