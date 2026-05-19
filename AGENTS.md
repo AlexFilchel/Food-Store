@@ -17,6 +17,7 @@ Usá **solo** las skills instaladas localmente en `.agents/skills/`.
 | `architecture-patterns` | Cuando haya que diseñar o refactorizar arquitectura backend, aplicar Clean Architecture, Hexagonal Architecture, DDD, bounded contexts o resolver ciclos entre capas. |
 | `fastapi-templates` | Cuando haya que crear o estructurar aplicaciones FastAPI, endpoints backend, patrones async, dependency injection o manejo de errores en APIs Python. |
 | `find-skills` | Cuando el usuario pida buscar, descubrir o recomendar nuevas skills para una tecnología, flujo o necesidad específica. |
+| `local-dev-autofix` | Cuando el frontend no conecta al backend en local (Windows): puerto 8000 ocupado, CORS 5173/5174, env vars; diagnóstico y reparación con confirmación antes de acciones destructivas. |
 | `openapi-specification-v2` | Cuando haya que escribir, revisar, validar o interpretar especificaciones Swagger/OpenAPI 2.0. |
 | `python-code-review` | Cuando haya que revisar código Python buscando type safety, async/await correcto, manejo de errores y errores comunes. |
 | `python-expert-best-practices-code-review` | Cuando se escriba, revise o refactorice código Python productivo y se necesiten buenas prácticas generales de calidad. |
