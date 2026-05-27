@@ -7,7 +7,7 @@ from app.modules.orders.errors import (
     order_terminal_state,
 )
 
-ActorType = Literal["customer", "admin", "system"]
+ActorType = Literal["customer", "admin", "kitchen", "system"]
 
 TERMINAL_STATES = {"ENTREGADO", "CANCELADO"}
 
@@ -18,11 +18,11 @@ ALLOWED_TRANSITIONS: dict[str | None, dict[str, set[ActorType]]] = {
         "CANCELADO": {"customer", "admin", "system"},
     },
     "CONFIRMADO": {
-        "EN_PREPARACION": {"admin"},
+        "EN_PREPARACION": {"admin", "kitchen"},
         "CANCELADO": {"admin"},
     },
     "EN_PREPARACION": {
-        "EN_CAMINO": {"admin"},
+        "EN_CAMINO": {"admin", "kitchen"},
         "CANCELADO": {"admin"},
     },
     "EN_CAMINO": {"ENTREGADO": {"admin"}},

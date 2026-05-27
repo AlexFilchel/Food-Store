@@ -4,7 +4,7 @@ from typing import Annotated
 from fastapi import APIRouter, Depends, status
 
 from app.core.uow import SqlAlchemyUnitOfWork, get_uow
-from app.modules.auth.dependencies import get_current_user, require_role
+from app.modules.auth.dependencies import get_current_role_codes, get_current_user, require_role
 from app.modules.identity.model import User
 from app.modules.orders.schemas import (
     OperationsOrderDetailResponse,
@@ -20,7 +20,7 @@ from app.modules.orders.schemas import (
 from app.modules.orders.service import order_service
 
 router = APIRouter(prefix="/orders", tags=["orders"])
-admin_router = APIRouter(prefix="/admin/orders", tags=["admin-orders"], dependencies=[Depends(require_role("ADMIN", "PEDIDOS"))])
+admin_router = APIRouter(prefix="/admin/orders", tags=["admin-orders"])
 
 
 @router.post("", response_model=OrderResponse, status_code=status.HTTP_201_CREATED)
@@ -82,7 +82,9 @@ async def cancel_order(
 async def transition_operations_order(
     order_id: int,
     payload: OrderTransitionRequest,
+    _: Annotated[User, Depends(require_role("ADMIN", "PEDIDOS", "COCINA"))],
     current_user: Annotated[User, Depends(get_current_user)],
+    current_role_codes: Annotated[set[str], Depends(get_current_role_codes)],
     uow: Annotated[SqlAlchemyUnitOfWork, Depends(get_uow)],
 ) -> OperationsOrderDetailResponse:
     return await order_service.transition_operations_order(
@@ -90,6 +92,7 @@ async def transition_operations_order(
         order_id=order_id,
         to_code=payload.to_state_code,
         actor_user_id=current_user.id,
+        actor_role_codes=current_role_codes,
         reason_code=payload.reason_code,
         note=payload.note,
     )
@@ -97,6 +100,7 @@ async def transition_operations_order(
 
 @admin_router.get("", response_model=OperationsOrderListPageResponse)
 async def list_operations_orders(
+    _: Annotated[User, Depends(require_role("ADMIN", "PEDIDOS"))],
     uow: Annotated[SqlAlchemyUnitOfWork, Depends(get_uow)],
     state_code: str | None = None,
     date_from: datetime | None = None,
@@ -121,6 +125,7 @@ async def list_operations_orders(
 @admin_router.get("/{order_id}", response_model=OperationsOrderDetailResponse)
 async def get_operations_order(
     order_id: int,
+    _: Annotated[User, Depends(require_role("ADMIN", "PEDIDOS"))],
     uow: Annotated[SqlAlchemyUnitOfWork, Depends(get_uow)],
 ) -> OperationsOrderDetailResponse:
     return await order_service.get_operations_order(uow, order_id=order_id)

@@ -15,13 +15,14 @@ export const routePaths = {
   adminUserDetail: '/admin/users/:userId',
   adminOrders: '/admin/orders',
   adminOrderDetail: '/admin/orders/:orderId',
+  kitchen: '/cocina',
   orders: '/orders',
   orderDetail: '/orders/:orderId',
   paymentResult: '/payment/result',
   accessDenied: '/access-denied',
 } as const
 
-export type AppRoleCode = 'ADMIN' | 'CLIENT' | 'PEDIDOS' | 'STOCK'
+export type AppRoleCode = 'ADMIN' | 'CLIENT' | 'COCINA' | 'PEDIDOS' | 'STOCK'
 
 export interface NavigationRoute {
   allowedRoles: readonly AppRoleCode[]
@@ -83,6 +84,13 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     exact: true,
   },
   {
+    to: routePaths.kitchen,
+    label: 'Cocina',
+    description: 'Pantalla operativa de pedidos para producción.',
+    allowedRoles: ['ADMIN', 'PEDIDOS', 'COCINA'],
+    exact: true,
+  },
+  {
     to: routePaths.orders,
     label: 'Mis pedidos',
     description: 'Seguimiento de tus pedidos como cliente.',
@@ -107,6 +115,12 @@ export function getDefaultAuthenticatedPath(userRoles: readonly string[]) {
 
   if (userRoles.includes('PEDIDOS')) {
     return routePaths.adminOrders
+  }
+
+  const hasKitchenRole = userRoles.includes('COCINA')
+  const hasOtherOperationalRole = userRoles.some((role) => role === 'ADMIN' || role === 'PEDIDOS' || role === 'STOCK')
+  if (hasKitchenRole && !hasOtherOperationalRole) {
+    return routePaths.kitchen
   }
 
   return routePaths.app

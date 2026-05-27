@@ -22,13 +22,16 @@ async def test_seed_is_idempotent():
 
     async with session_factory() as session:
         roles_count = await session.scalar(select(func.count()).select_from(Role))
+        cocina_role = await session.scalar(select(Role).where(Role.code == "COCINA"))
         states_count = await session.scalar(select(func.count()).select_from(OrderState))
         payment_methods_count = await session.scalar(select(func.count()).select_from(PaymentMethod))
         admins_count = await session.scalar(select(func.count()).select_from(User))
         assignments_count = await session.scalar(select(func.count()).select_from(UserRole))
 
-    assert roles_count == 4
+    assert roles_count == 5
+    assert cocina_role is not None
+    assert cocina_role.name == "Cocinero"
     assert states_count == 6
     assert payment_methods_count == 3
-    assert admins_count == 1
-    assert assignments_count == 1
+    assert admins_count == 8
+    assert assignments_count == 9

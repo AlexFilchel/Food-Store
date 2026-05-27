@@ -1,8 +1,8 @@
 import type { PropsWithChildren } from 'react'
 import { useEffect } from 'react'
-import { Link, Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
-import { routePaths } from '@/app/routes/route-config'
+import { getDefaultAuthenticatedPath, routePaths } from '@/app/routes/route-config'
 import { useAuthMeQuery } from '@/features/auth/model/use-auth-me-query'
 import { getErrorMessage, isAuthProblem } from '@/shared/api/problem-details'
 import { useFeedbackStore } from '@/shared/stores/feedback-store'
@@ -10,6 +10,7 @@ import { useAuthStore } from '@/shared/stores/auth-store'
 
 export function SessionBootstrapBoundary({ children }: PropsWithChildren) {
   const location = useLocation()
+  const navigate = useNavigate()
   const user = useAuthStore((state) => state.user)
   const setUser = useAuthStore((state) => state.setUser)
   const clearSession = useAuthStore((state) => state.clear)
@@ -24,6 +25,21 @@ export function SessionBootstrapBoundary({ children }: PropsWithChildren) {
       setUser(query.data)
     }
   }, [query.data, setUser])
+
+  useEffect(() => {
+    if (!query.data) {
+      return
+    }
+
+    if (location.pathname !== routePaths.app) {
+      return
+    }
+
+    const destination = getDefaultAuthenticatedPath(query.data.roles)
+    if (destination !== routePaths.app) {
+      navigate(destination, { replace: true })
+    }
+  }, [location.pathname, navigate, query.data])
 
   useEffect(() => {
     if (!query.error || isAuthProblem(query.error)) {

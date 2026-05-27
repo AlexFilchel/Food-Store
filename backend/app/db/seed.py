@@ -20,6 +20,7 @@ ROLE_SEED = [
     {"id": 2, "code": "STOCK", "name": "Stock Manager", "description": "Catalog and stock operations"},
     {"id": 3, "code": "PEDIDOS", "name": "Order Manager", "description": "Order operations"},
     {"id": 4, "code": "CLIENT", "name": "Client", "description": "Customer role"},
+    {"id": 5, "code": "COCINA", "name": "Cocinero", "description": "Kitchen display and preparation workflow"},
 ]
 
 ORDER_STATE_SEED = [

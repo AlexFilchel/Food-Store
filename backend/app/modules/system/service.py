@@ -19,6 +19,7 @@ class SystemService:
                 ExampleItem(id=2, code="STOCK", label="Stock Manager"),
                 ExampleItem(id=3, code="PEDIDOS", label="Order Manager"),
                 ExampleItem(id=4, code="CLIENT", label="Client"),
+                ExampleItem(id=5, code="COCINA", label="Cocinero"),
             ]
             start = page_params.offset
             end = start + page_params.size

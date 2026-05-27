@@ -6,6 +6,8 @@ from sqlalchemy import select
 
 from app.core.time import to_utc_iso, utc_now
 from app.core.uow import SqlAlchemyUnitOfWork
+from app.modules.kitchen.events import publish_kitchen_event
+from app.modules.kitchen.schemas import KitchenEventResponse, KitchenOrderCardResponse
 from app.modules.orders.errors import (
     order_delivery_address_not_found,
     order_delivery_address_required,
@@ -121,6 +123,17 @@ class OrderService:
         await uow.order_history.create(history)
 
         items = await uow.order_items.list_by_order(order_id=order.id)
+        kitchen_event = await self._build_kitchen_event_in_uow(
+            uow,
+            order=order,
+            current_state=current_state,
+            target_state=target_state,
+            items=items,
+            history=history,
+        )
+        if kitchen_event is not None:
+            uow.add_after_commit_task(lambda: publish_kitchen_event(kitchen_event))
+
         payment_method = await uow.payment_methods.get_by_id(order.payment_method_id) if order.payment_method_id else None
         return OrderResponse.from_model(
             order,
@@ -451,6 +464,7 @@ class OrderService:
         order_id: int,
         to_code: str,
         actor_user_id: int,
+        actor_role_codes: set[str],
         reason_code: str | None,
         note: str | None,
     ) -> OperationsOrderDetailResponse:
@@ -459,24 +473,86 @@ class OrderService:
             if current is None:
                 raise order_not_found()
             current_state = await uow.order_states.get_by_id(current.state_id)
+            actor_type = self._resolve_operations_actor_type(actor_role_codes)
             allowed_actions = self._allowed_actions(
                 current_state_code=current_state.code if current_state else None,
-                actor_type="admin",
+                actor_type=actor_type,
             )
             if to_code not in allowed_actions:
+                if actor_type == "kitchen":
+                    raise order_forbidden_transition(
+                        actor_type="kitchen",
+                        from_state=current_state.code if current_state else None,
+                        to_state=to_code,
+                    )
                 raise order_operation_not_allowed(action=to_code)
             await self._transition_order_in_uow(
                 uow,
                 order_id=order_id,
                 to_code=to_code,
-                actor_type="admin",
+                actor_type=actor_type,
                 actor_user_id=actor_user_id,
-                source="operations",
+                source="kitchen" if actor_type == "kitchen" else "operations",
                 reason_code=reason_code,
                 note=note,
-                event_key=f"order:{order_id}:operations:{to_code}",
+                event_key=f"order:{order_id}:{'kitchen' if actor_type == 'kitchen' else 'operations'}:{to_code}",
             )
             return await self._get_operations_order_in_uow(uow, order_id=order_id)
+
+    @staticmethod
+    def _resolve_operations_actor_type(role_codes: set[str]) -> ActorType:
+        if "ADMIN" in role_codes or "PEDIDOS" in role_codes:
+            return "admin"
+        if "COCINA" in role_codes:
+            return "kitchen"
+        raise order_forbidden_transition(actor_type="unknown", from_state="UNKNOWN", to_state="UNKNOWN")
+
+    async def _build_kitchen_event_in_uow(
+        self,
+        uow: SqlAlchemyUnitOfWork,
+        *,
+        order: Order,
+        current_state: OrderState,
+        target_state: OrderState,
+        items: list[OrderItem],
+        history: OrderHistory,
+    ) -> KitchenEventResponse | None:
+        event_type = self._resolve_kitchen_event_type(from_code=current_state.code, to_code=target_state.code)
+        if event_type is None:
+            return None
+
+        card: KitchenOrderCardResponse | None = None
+        if event_type in {"PEDIDO_CONFIRMADO", "PEDIDO_EN_PREPARACION"}:
+            kitchen_entered_at = history.created_at
+            if target_state.code != "CONFIRMADO":
+                kitchen_entered_at = await uow.kitchen.get_kitchen_entered_at(order_id=order.id)
+            if kitchen_entered_at is None:
+                kitchen_entered_at = history.created_at
+            card = KitchenOrderCardResponse.from_values(
+                order=order,
+                state=target_state,
+                items=items,
+                kitchen_entered_at=kitchen_entered_at,
+            )
+
+        return KitchenEventResponse(
+            type=event_type,
+            order_id=order.id,
+            occurred_at=to_utc_iso(history.created_at),
+            order=card,
+        )
+
+    @staticmethod
+    def _resolve_kitchen_event_type(*, from_code: str, to_code: str) -> str | None:
+        if from_code == "PENDIENTE" and to_code == "CONFIRMADO":
+            return "PEDIDO_CONFIRMADO"
+        if from_code == "CONFIRMADO" and to_code == "EN_PREPARACION":
+            return "PEDIDO_EN_PREPARACION"
+        if from_code == "EN_PREPARACION" and to_code == "EN_CAMINO":
+            return "PEDIDO_EN_CAMINO"
+        if to_code == "CANCELADO" and from_code in {"CONFIRMADO", "EN_PREPARACION"}:
+            return "PEDIDO_CANCELADO"
+        return None
 
     async def _get_operations_order_in_uow(
         self,

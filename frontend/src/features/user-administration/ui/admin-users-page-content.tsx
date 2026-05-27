@@ -11,6 +11,7 @@ const ROLE_OPTIONS: { value: UserRoleCode | 'ALL'; label: string }[] = [
   { value: 'ADMIN', label: 'Admin' },
   { value: 'STOCK', label: 'Stock' },
   { value: 'PEDIDOS', label: 'Pedidos' },
+  { value: 'COCINA', label: 'Cocina' },
   { value: 'CLIENT', label: 'Cliente' },
 ]
 

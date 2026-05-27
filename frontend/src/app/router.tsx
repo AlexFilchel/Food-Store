@@ -11,6 +11,7 @@ import { AnonymousOnlyGuard } from '@/app/guards/anonymous-only-guard'
 import { AuthenticatedGuard } from '@/app/guards/authenticated-guard'
 import { RoleGuard } from '@/app/guards/role-guard'
 import { ShellEventBridge } from '@/app/providers/shell-event-bridge'
+import { SessionInactivityGuard } from '@/app/providers/session-inactivity-guard'
 import type { AppRoleCode } from '@/app/routes/route-config'
 import { routePaths } from '@/app/routes/route-config'
 import { SessionBootstrapBoundary } from '@/features/auth/ui/session-bootstrap-boundary'
@@ -25,6 +26,7 @@ import { AdminUserDetailPage } from '@/pages/admin-user-detail-page/ui/admin-use
 import { AppPage } from '@/pages/app-page/ui/app-page'
 import { CartPage } from '@/pages/cart-page/ui/cart-page'
 import { HomePage } from '@/pages/home-page/ui/home-page'
+import { KitchenPage } from '@/pages/kitchen-page/ui/kitchen-page'
 import { LoginPage } from '@/pages/login-page/ui/login-page'
 import { NotFoundPage } from '@/pages/not-found-page/ui/not-found-page'
 import { OrdersPage } from '@/pages/orders-page/ui/orders-page'
@@ -77,7 +79,9 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           element={
             <AuthenticatedGuard>
               <SessionBootstrapBoundary>
-                <AuthenticatedShellLayout />
+                <SessionInactivityGuard>
+                  <AuthenticatedShellLayout />
+                </SessionInactivityGuard>
               </SessionBootstrapBoundary>
             </AuthenticatedGuard>
           }
@@ -94,6 +98,7 @@ export function createAppRouter(options?: CreateAppRouterOptions) {
           <Route path={routePaths.orderDetail} element={<ProtectedByRole allowedRoles={['CLIENT']}><OrderDetailPage /></ProtectedByRole>} />
           <Route path={routePaths.adminOrders} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS']}><AdminOrdersPage /></ProtectedByRole>} />
           <Route path={routePaths.adminOrderDetail} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS']}><AdminOrderDetailPage /></ProtectedByRole>} />
+          <Route path={routePaths.kitchen} element={<ProtectedByRole allowedRoles={['ADMIN', 'PEDIDOS', 'COCINA']}><KitchenPage /></ProtectedByRole>} />
           <Route path={routePaths.paymentResult} element={<ProtectedByRole allowedRoles={['CLIENT']}><PaymentResultPage /></ProtectedByRole>} />
         </Route>
 

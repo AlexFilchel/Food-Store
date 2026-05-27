@@ -9,6 +9,7 @@ import { authClient } from '@/shared/api/auth-client'
 import { httpClient } from '@/shared/api/http-client'
 import { customerProfileClient } from '@/entities/customer-profile/api/customer-profile-client'
 import { deliveryAddressClient } from '@/entities/delivery-addresses/api/delivery-address-client'
+import { kitchenClient } from '@/entities/kitchen/api/kitchen-client'
 import { useCartStore } from '@/shared/stores/cart-store'
 import { useFeedbackStore } from '@/shared/stores/feedback-store'
 import type { AuthUser } from '@/shared/stores/auth-store'
@@ -102,6 +103,13 @@ vi.mock('@/entities/order/api/order-client', () => ({
   },
 }))
 
+vi.mock('@/entities/kitchen/api/kitchen-client', () => ({
+  kitchenClient: {
+    list: vi.fn(),
+  },
+  buildKitchenWebSocketUrl: (token: string) => `ws://localhost:8000/api/v1/cocina/ws?token=${token}`,
+}))
+
 vi.mock('@/entities/user-administration/api/user-admin-client', () => ({
   userAdminClient: {
     list: vi.fn(),
@@ -135,6 +143,20 @@ const pedidosUser: AuthUser = {
   id: 3,
   email: 'pedidos@example.com',
   roles: ['PEDIDOS'],
+}
+
+const cocinaUser: AuthUser = {
+  ...clientUser,
+  id: 4,
+  email: 'cocina@example.com',
+  roles: ['COCINA'],
+}
+
+const stockUser: AuthUser = {
+  ...clientUser,
+  id: 5,
+  email: 'stock@example.com',
+  roles: ['STOCK'],
 }
 
 function authProblem(status = 401): AxiosError {
@@ -195,6 +217,18 @@ function renderRouter(initialEntries: string[]) {
 
 describe('AppRouter access control', () => {
   beforeEach(() => {
+    class RouterTestWebSocket {
+      onclose: (() => void) | null = null
+      onerror: (() => void) | null = null
+      onmessage: (() => void) | null = null
+      onopen: (() => void) | null = null
+
+      close() {
+        this.onclose?.()
+      }
+    }
+
+    vi.stubGlobal('WebSocket', RouterTestWebSocket as unknown as typeof WebSocket)
     localStorage.clear()
     useAuthStore.getState().clear()
     useCartStore.getState().clear()
@@ -202,6 +236,7 @@ describe('AppRouter access control', () => {
     vi.restoreAllMocks()
     vi.mocked(customerProfileClient.get).mockResolvedValue(clientUser)
     vi.mocked(deliveryAddressClient.list).mockResolvedValue([])
+    vi.mocked(kitchenClient.list).mockResolvedValue({ items: [] })
     vi.mocked(orderClient.listOperations).mockResolvedValue({ items: [], total: 0, skip: 0, limit: 10 })
     vi.mocked(orderClient.getOperations).mockResolvedValue({
       order: {
@@ -360,6 +395,13 @@ describe('AppRouter access control', () => {
       hidden: [/^Administración$/i, /^Stock$/i, /^Pedidos$/i, /^Configuración$/i],
     },
     {
+      user: cocinaUser,
+      path: '/cocina',
+      heading: 'Pantalla de cocina',
+      visible: [/Cocina/i],
+      hidden: [/Mis pedidos/i, /^Usuarios$/i, /^Configuración$/i],
+    },
+    {
       user: adminUser,
       path: '/admin/metrics',
       heading: 'Dashboard de métricas',
@@ -372,6 +414,13 @@ describe('AppRouter access control', () => {
       heading: 'Pedidos operativos',
       visible: [/Pedidos/i],
       hidden: [/Administración/i, /Mis pedidos/i, /Configuración/i],
+    },
+    {
+      user: stockUser,
+      path: '/app',
+      heading: 'Espacio del cliente',
+      visible: [],
+      hidden: [/Mis pedidos/i, /^Pedidos$/i, /^Cocina$/i, /^Configuración$/i],
     },
   ])('renders role-aware navigation for $user.roles', async ({ user, path, heading, visible, hidden }) => {
     vi.spyOn(authClient, 'me').mockResolvedValue(user)
@@ -444,6 +493,10 @@ describe('AppRouter access control', () => {
     expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
   })
 
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it('blocks non-admin users from the system configuration route', async () => {
     vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
     useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
@@ -479,6 +532,55 @@ describe('AppRouter access control', () => {
     renderRouter(['/admin/orders'])
 
     expect(await screen.findByRole('heading', { name: /Pedidos operativos/i })).toBeInTheDocument()
+  })
+
+  it('allows kitchen users to access the kitchen route and denies customer-only users', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(cocinaUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: cocinaUser })
+
+    const allowed = renderRouter(['/cocina'])
+    expect(await screen.findByRole('heading', { name: 'Pantalla de cocina' })).toBeInTheDocument()
+    allowed.unmount()
+
+    vi.restoreAllMocks()
+    vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
+
+    renderRouter(['/cocina'])
+    expect(await screen.findByRole('heading', { name: /No tenés permisos para esta sección/i })).toBeInTheDocument()
+  })
+
+  it('hides the kitchen navigation entry for CLIENT-only users', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(clientUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: clientUser })
+
+    renderRouter(['/app'])
+
+    expect(await screen.findByRole('heading', { name: 'Espacio del cliente' })).toBeInTheDocument()
+    expect(screen.queryByRole('link', { name: /^Cocina$/i })).not.toBeInTheDocument()
+  })
+
+  it.each([
+    adminUser,
+    pedidosUser,
+    cocinaUser,
+  ])('shows the kitchen navigation entry for %s-capable users', async (user) => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(user)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user })
+
+    renderRouter([user.roles.includes('COCINA') ? '/cocina' : '/admin/orders'])
+
+    await screen.findByRole('navigation', { name: 'Navegación principal' })
+    expect(screen.getAllByRole('link', { name: /^Cocina$/i }).length).toBeGreaterThan(0)
+  })
+
+  it('redirects kitchen-only users to /cocina after session restoration', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(cocinaUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: null })
+
+    renderRouter(['/app'])
+
+    expect(await screen.findByRole('heading', { name: 'Pantalla de cocina' })).toBeInTheDocument()
   })
 
   it('blocks customer users from operations routes', async () => {
@@ -536,6 +638,30 @@ describe('AppRouter access control', () => {
     }
   })
 
+  it('clears kitchen session on unrecoverable HTTP 401 while user is on /cocina', async () => {
+    vi.spyOn(authClient, 'me').mockResolvedValue(cocinaUser)
+    useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: cocinaUser })
+    const originalAdapter = httpClient.defaults.adapter
+    httpClient.defaults.adapter = ((config) => Promise.reject(httpFailure(401, { ...config, _retry: true } as InternalAxiosRequestConfig))) as AxiosAdapter
+
+    try {
+      renderRouter(['/cocina'])
+
+      expect(await screen.findByRole('heading', { name: 'Pantalla de cocina' })).toBeInTheDocument()
+
+      await act(async () => {
+        await httpClient.get('/api/v1/cocina/pedidos', { _retry: true } as never).catch(() => undefined)
+      })
+
+      expect(await screen.findByRole('heading', { name: 'Iniciar sesión' })).toBeInTheDocument()
+      await waitFor(() => expect(useAuthStore.getState().accessToken).toBeNull())
+      expect(useAuthStore.getState().refreshToken).toBeNull()
+      expect(useAuthStore.getState().user).toBeNull()
+    } finally {
+      httpClient.defaults.adapter = originalAdapter
+    }
+  })
+
   it('handles HTTP 403 globally with an access-denied experience', async () => {
     vi.spyOn(authClient, 'me').mockResolvedValue(adminUser)
     useAuthStore.setState({ accessToken: 'access', refreshToken: 'refresh', user: adminUser })
@@ -543,9 +669,9 @@ describe('AppRouter access control', () => {
     httpClient.defaults.adapter = ((config) => Promise.reject(httpFailure(403, config))) as AxiosAdapter
 
     try {
-      renderRouter(['/admin/metrics'])
+      renderRouter(['/admin/orders'])
 
-      expect(await screen.findByRole('heading', { name: 'Dashboard de métricas' })).toBeInTheDocument()
+      expect(await screen.findByRole('heading', { name: /Pedidos operativos/i })).toBeInTheDocument()
 
       await act(async () => {
         await httpClient.get('/api/v1/admin/secure').catch(() => undefined)
