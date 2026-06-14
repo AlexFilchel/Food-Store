@@ -19,6 +19,8 @@ export const routePaths = {
   orders: '/orders',
   orderDetail: '/orders/:orderId',
   paymentResult: '/payment/result',
+  profile: '/perfil',
+  deliveryAddresses: '/mis-direcciones',
   accessDenied: '/access-denied',
 } as const
 
@@ -94,6 +96,20 @@ export const navigationRoutes: readonly NavigationRoute[] = [
     to: routePaths.orders,
     label: 'Mis pedidos',
     description: 'Seguimiento de tus pedidos como cliente.',
+    allowedRoles: ['CLIENT'],
+    exact: true,
+  },
+  {
+    to: routePaths.profile,
+    label: 'Mi perfil',
+    description: 'Editá tu información personal y contraseña.',
+    allowedRoles: ['CLIENT'],
+    exact: true,
+  },
+  {
+    to: routePaths.deliveryAddresses,
+    label: 'Mis direcciones',
+    description: 'Gestioná tus direcciones de entrega.',
     allowedRoles: ['CLIENT'],
     exact: true,
   },
