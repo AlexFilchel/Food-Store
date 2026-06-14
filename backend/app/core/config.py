@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     bootstrap_admin_full_name: str = Field("Food Store Admin", alias="BOOTSTRAP_ADMIN_FULL_NAME")
     bootstrap_admin_first_name: str = Field("Food", alias="BOOTSTRAP_ADMIN_FIRST_NAME")
     bootstrap_admin_last_name: str = Field("Store Admin", alias="BOOTSTRAP_ADMIN_LAST_NAME")
+    cloudinary_url: str = Field("", alias="CLOUDINARY_URL")
 
     @property
     def cors_origins_list(self) -> list[str]:

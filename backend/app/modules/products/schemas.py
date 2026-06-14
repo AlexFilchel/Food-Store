@@ -24,6 +24,7 @@ class ProductCreateRequest(BaseModel):
     stock_quantity: int = Field(default=0, ge=0)
     is_active: bool = True
     is_available: bool = True
+    image_url: str | None = None
     category_ids: list[int] = Field(default_factory=list)
     ingredients: list[ProductIngredientCompositionRequest] = Field(default_factory=list)
 
@@ -37,6 +38,7 @@ class ProductUpdateRequest(BaseModel):
     stock_quantity: int | None = Field(default=None, ge=0)
     is_active: bool | None = None
     is_available: bool | None = None
+    image_url: str | None = None
     category_ids: list[int] | None = None
     ingredients: list[ProductIngredientCompositionRequest] | None = None
 
@@ -67,6 +69,7 @@ class ProductResponse(BaseModel):
     stock_quantity: int
     is_active: bool
     is_available: bool
+    image_url: str | None
     created_at: str
     updated_at: str
     categories: list[ProductCategoryPayload]
@@ -89,6 +92,7 @@ class ProductResponse(BaseModel):
             stock_quantity=product.stock_quantity,
             is_active=product.is_active,
             is_available=product.is_available,
+            image_url=product.image_url,
             created_at=to_utc_iso(product.created_at),
             updated_at=to_utc_iso(product.updated_at),
             categories=[ProductCategoryPayload.from_model(category) for category in categories],
@@ -127,6 +131,7 @@ class PublicProductResponse(BaseModel):
     slug: str
     description: str | None
     price: str
+    image_url: str | None
     categories: list[PublicProductCategoryPayload]
     ingredients: list[PublicProductIngredientPayload]
 
@@ -144,6 +149,7 @@ class PublicProductResponse(BaseModel):
             slug=product.slug,
             description=product.description,
             price=f"{product.price:.2f}",
+            image_url=product.image_url,
             categories=[PublicProductCategoryPayload.from_model(category) for category in categories],
             ingredients=[
                 PublicProductIngredientPayload(

@@ -17,6 +17,7 @@ export interface PublicCatalogProduct {
   slug: string
   description: string | null
   price: string
+  image_url: string | null
   categories: PublicCatalogCategoryRef[]
   ingredients: PublicCatalogIngredientRef[]
 }

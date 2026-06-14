@@ -8,16 +8,27 @@ import { usePublicSystemConfigurationQuery } from '@/features/system-configurati
 export function HomePage() {
   const [search, setSearch] = useState('')
   const [categoryIdInput, setCategoryIdInput] = useState('')
+  const [page, setPage] = useState(1)
 
   const filters = useMemo(
     () => ({
-      page: 1,
+      page,
       size: 12,
       search: search.trim() || undefined,
       category_id: categoryIdInput.trim() ? Number(categoryIdInput) : undefined,
     }),
-    [search, categoryIdInput],
+    [page, search, categoryIdInput],
   )
+
+  const handleSearchChange = (value: string) => {
+    setSearch(value)
+    setPage(1)
+  }
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryIdInput(value.replace(/[^0-9]/g, ''))
+    setPage(1)
+  }
 
   const query = usePublicCatalogListQuery(filters)
   const publicConfigurationQuery = usePublicSystemConfigurationQuery()
@@ -38,7 +49,7 @@ export function HomePage() {
           className="rounded-xl border border-slate-300 px-3 py-2"
           placeholder="Buscar por nombre"
           value={search}
-          onChange={(event) => setSearch(event.target.value)}
+          onChange={(event) => handleSearchChange(event.target.value)}
         />
         <input
           aria-label="Filtrar por categoría"
@@ -47,7 +58,7 @@ export function HomePage() {
           min={1}
           placeholder="Filtrar por category_id"
           value={categoryIdInput}
-          onChange={(event) => setCategoryIdInput(event.target.value.replace(/[^0-9]/g, ''))}
+          onChange={(event) => handleCategoryChange(event.target.value)}
         />
       </div>
 
@@ -59,7 +70,17 @@ export function HomePage() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {(query.data?.items ?? []).map((product) => (
-          <article key={product.id} className="space-y-3 rounded-2xl border border-slate-200 p-4">
+          <article key={product.id} className="overflow-hidden rounded-2xl border border-slate-200">
+            {product.image_url ? (
+              <img
+                alt={product.name}
+                className="h-48 w-full object-cover"
+                src={product.image_url}
+              />
+            ) : (
+              <div className="flex h-48 w-full items-center justify-center bg-slate-100 text-slate-400 text-sm">Sin imagen</div>
+            )}
+            <div className="space-y-3 p-4">
             <h2 className="text-lg font-semibold text-slate-950">{product.name}</h2>
             <p className="text-sm text-slate-600">{product.description || 'Sin descripción.'}</p>
             <p className="font-semibold text-slate-900">${product.price}</p>
@@ -78,9 +99,34 @@ export function HomePage() {
             >
               Ver detalle y agregar
             </Link>
+            </div>
           </article>
         ))}
       </div>
+
+      {(query.data?.pages ?? 0) > 1 ? (
+        <div className="flex items-center justify-center gap-4">
+          <button
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            disabled={page <= 1}
+            onClick={() => setPage((p) => p - 1)}
+            type="button"
+          >
+            ← Anterior
+          </button>
+          <span className="text-sm text-slate-600">
+            Página {page} de {query.data?.pages}
+          </span>
+          <button
+            className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+            disabled={page >= (query.data?.pages ?? 1)}
+            onClick={() => setPage((p) => p + 1)}
+            type="button"
+          >
+            Siguiente →
+          </button>
+        </div>
+      ) : null}
     </section>
   )
 }

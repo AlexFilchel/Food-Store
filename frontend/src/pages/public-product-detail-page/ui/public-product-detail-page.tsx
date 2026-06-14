@@ -100,6 +100,13 @@ export function PublicProductDetailPage() {
   return (
     <section className="mx-auto max-w-5xl space-y-6 px-4 py-10">
       <Link className="text-sm text-sky-700 underline" to={routePaths.home}>← Volver al catálogo</Link>
+      {product.image_url ? (
+        <img
+          alt={product.name}
+          className="h-64 w-full rounded-2xl object-cover"
+          src={product.image_url}
+        />
+      ) : null}
       <header className="space-y-2">
         <h1 className="text-3xl font-semibold text-slate-950">{product.name}</h1>
         <p className="text-xl font-semibold text-slate-900">${product.price}</p>

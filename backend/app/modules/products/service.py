@@ -74,6 +74,7 @@ class ProductService:
                     stock_quantity=payload.stock_quantity,
                     is_active=payload.is_active,
                     is_available=payload.is_available,
+                    image_url=payload.image_url,
                 ),
             )
             await uow.products.replace_categories(product.id, payload.category_ids)
@@ -106,6 +107,7 @@ class ProductService:
                     "stock_quantity": next_stock,
                     "is_active": next_active,
                     "is_available": updates.get("is_available", product.is_available),
+                    "image_url": updates.get("image_url", product.image_url),
                 },
             )
             if "category_ids" in updates:
