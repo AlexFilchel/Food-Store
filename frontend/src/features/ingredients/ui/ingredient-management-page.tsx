@@ -332,10 +332,10 @@ export function IngredientManagementPage() {
                     </td>
                     <td className="px-1 py-2 align-middle">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" type="button" onClick={() => startIngredientEdit(item)}>
+                        <button aria-label="Editar ingrediente" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" type="button" onClick={() => startIngredientEdit(item)}>
                           Editar
                         </button>
-                        <button className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50" type="button" onClick={() => void removeIngredient(item)}>
+                        <button aria-label="Eliminar ingrediente" className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50" type="button" onClick={() => void removeIngredient(item)}>
                           Eliminar
                         </button>
                       </div>
@@ -380,10 +380,10 @@ export function IngredientManagementPage() {
                     </td>
                     <td className="px-1 py-2 align-middle">
                       <div className="flex items-center justify-center gap-2">
-                        <button className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" type="button" onClick={() => startAllergenEdit(item)}>
+                        <button aria-label="Editar alérgeno" className="rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50" type="button" onClick={() => startAllergenEdit(item)}>
                           Editar
                         </button>
-                        <button className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50" type="button" onClick={() => void removeAllergen(item)}>
+                        <button aria-label="Eliminar alérgeno" className="rounded-lg border border-rose-200 px-3 py-2 text-sm font-semibold text-rose-700 transition hover:bg-rose-50" type="button" onClick={() => void removeAllergen(item)}>
                           Eliminar
                         </button>
                       </div>

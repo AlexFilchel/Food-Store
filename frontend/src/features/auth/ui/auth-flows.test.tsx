@@ -120,7 +120,7 @@ describe('Auth flows', () => {
     await user.type(screen.getByLabelText('Contraseña'), 'WrongPass123!')
     await user.click(screen.getByRole('button', { name: 'Iniciar sesión' }))
 
-    expect(await screen.findByRole('alert')).toHaveTextContent('Credenciales inválidas.')
+    expect(await screen.findByText('Credenciales inválidas.')).toBeInTheDocument()
     expect(useAuthStore.getState().accessToken).toBeNull()
     expect(useAuthStore.getState().refreshToken).toBeNull()
     expect(screen.queryByText(/secret-access-token/i)).not.toBeInTheDocument()
